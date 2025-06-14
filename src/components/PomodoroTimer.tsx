@@ -110,7 +110,7 @@ export const PomodoroTimer = () => {
   const progress = duration > 0 ? ((duration * 60 - timeLeft) / (duration * 60)) * 100 : 0;
 
   return (
-    <Card className="bg-white/90 backdrop-blur-sm border-slate-200 w-full max-w-sm">
+    <Card className="bg-white/70 backdrop-blur-sm border-slate-200/50 shadow-none w-full max-w-sm">
       <CardContent className="p-3 lg:p-4">
         <div className="space-y-3 lg:space-y-4">
           {/* Timer Display */}
@@ -121,19 +121,19 @@ export const PomodoroTimer = () => {
               ) : (
                 <Timer className="h-4 w-4 text-blue-500" />
               )}
-              <span className="font-medium text-xs lg:text-sm">
+              <span className="font-medium text-xs lg:text-sm text-slate-700">
                 {isBreak ? 'Break Time' : 'Focus Time'}
               </span>
             </div>
             
-            <div className="text-2xl lg:text-3xl font-mono font-bold text-slate-900 mb-2">
+            <div className="text-2xl lg:text-3xl font-mono font-bold text-slate-800 mb-2">
               {formatTime(timeLeft)}
             </div>
             
             {isRunning && (
               <Progress 
                 value={progress} 
-                className="h-2 mb-2"
+                className="h-1.5 mb-2 bg-slate-200"
               />
             )}
           </div>
@@ -142,7 +142,7 @@ export const PomodoroTimer = () => {
           {!isBreak && !isRunning && (
             <div className="space-y-2">
               <Select value={selectedTaskId} onValueChange={setSelectedTaskId}>
-                <SelectTrigger className="w-full text-xs lg:text-sm">
+                <SelectTrigger className="w-full text-xs lg:text-sm border-slate-300 bg-white/50">
                   <SelectValue placeholder="Select a task" />
                 </SelectTrigger>
                 <SelectContent>
@@ -162,7 +162,7 @@ export const PomodoroTimer = () => {
               </Select>
 
               <Select value={duration.toString()} onValueChange={(value) => setDuration(parseInt(value))}>
-                <SelectTrigger className="w-full text-xs lg:text-sm">
+                <SelectTrigger className="w-full text-xs lg:text-sm border-slate-300 bg-white/50">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -180,7 +180,7 @@ export const PomodoroTimer = () => {
             {!isRunning ? (
               <Button 
                 onClick={handleStart}
-                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-xs lg:text-sm px-3 lg:px-4"
+                className="bg-green-500 hover:bg-green-600 text-white border-0 shadow-sm text-xs lg:text-sm px-3 lg:px-4 h-8 lg:h-9"
                 size="sm"
               >
                 <Play className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
@@ -188,11 +188,21 @@ export const PomodoroTimer = () => {
               </Button>
             ) : (
               <>
-                <Button onClick={handlePause} variant="outline" size="sm" className="text-xs lg:text-sm px-2 lg:px-3">
+                <Button 
+                  onClick={handlePause} 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-xs lg:text-sm px-2 lg:px-3 h-8 lg:h-9 border-slate-300 bg-white/50"
+                >
                   <Pause className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
                   Pause
                 </Button>
-                <Button onClick={handleStop} variant="outline" size="sm" className="text-xs lg:text-sm px-2 lg:px-3">
+                <Button 
+                  onClick={handleStop} 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-xs lg:text-sm px-2 lg:px-3 h-8 lg:h-9 border-slate-300 bg-white/50"
+                >
                   <Square className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
                   Stop
                 </Button>
@@ -202,7 +212,7 @@ export const PomodoroTimer = () => {
 
           {/* Current Session Info */}
           {currentPomodoro && !isBreak && (
-            <div className="text-center p-2 bg-blue-50 rounded-lg">
+            <div className="text-center p-2 bg-blue-50/70 rounded-lg border border-blue-200/50">
               <div className="text-xs lg:text-sm font-medium text-blue-900">
                 Working on: {tasks.find(t => t.id === currentPomodoro.task_id)?.title}
               </div>

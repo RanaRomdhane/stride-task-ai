@@ -14,6 +14,7 @@ import { StickyNotesWidget } from "@/components/StickyNotesWidget";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { AnalyticsCharts } from "@/components/AnalyticsCharts";
 import { GoogleIntegration } from "@/components/GoogleIntegration";
+import { Logo } from "@/components/Logo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -98,21 +99,24 @@ const Index = () => {
       <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex-shrink-0">
-              <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
-                TaskMaster AI
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-600">
-                AI-Powered Task Management with GTD
-                {userRole && (
-                  <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                    {userRole.role.replace('_', ' ').toUpperCase()}
-                  </span>
-                )}
-              </p>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <Logo />
+              <div>
+                <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
+                  TaskMaster AI
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-600">
+                  AI-Powered Task Management with GTD
+                  {userRole && (
+                    <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                      {userRole.role.replace('_', ' ').toUpperCase()}
+                    </span>
+                  )}
+                </p>
+              </div>
             </div>
             
-            <div className="flex items-center space-x-2 lg:space-x-4">
+            <div className="flex items-center gap-2 lg:gap-4">
               {/* Timer Toggle for Mobile */}
               <Button
                 onClick={() => setShowTimer(!showTimer)}
