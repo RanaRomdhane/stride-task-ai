@@ -89,8 +89,8 @@ const Index = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-3 mb-4">
               <Logo />
@@ -98,16 +98,12 @@ const Index = () => {
                 TaskMaster AI
               </h1>
             </div>
-            <p className="text-slate-600 mb-8">
-              AI-Powered Task Management with GTD
+            <p className="text-slate-600 text-lg">
+              AI-Powered Task Management
             </p>
           </div>
           
-          <div className="flex justify-center">
-            <div className="max-w-md w-full">
-              <AuthForm onAuthSuccess={handleAuthSuccess} />
-            </div>
-          </div>
+          <AuthForm onAuthSuccess={handleAuthSuccess} />
         </div>
       </div>
     );
