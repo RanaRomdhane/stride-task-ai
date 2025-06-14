@@ -17,13 +17,14 @@ import { GoogleIntegration } from "@/components/GoogleIntegration";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, Settings, Users, BarChart, Calendar, Kanban } from "lucide-react";
+import { LogOut, Settings, Users, BarChart, Calendar, Kanban, Timer } from "lucide-react";
 import { useTaskStore } from "@/store/taskStore";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showTimer, setShowTimer] = useState(false);
   const { fetchTasks, fetchBatches, fetchUserRole, fetchProjects, fetchStickyNotes, userRole } = useTaskStore();
 
   useEffect(() => {
@@ -96,12 +97,12 @@ const Index = () => {
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex-shrink-0">
+              <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
                 TaskMaster AI
               </h1>
-              <p className="text-sm text-slate-600">
+              <p className="text-xs sm:text-sm text-slate-600">
                 AI-Powered Task Management with GTD
                 {userRole && (
                   <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
@@ -110,19 +111,41 @@ const Index = () => {
                 )}
               </p>
             </div>
-            <div className="flex items-center space-x-4">
-              <PomodoroTimer />
+            
+            <div className="flex items-center space-x-2 lg:space-x-4">
+              {/* Timer Toggle for Mobile */}
+              <Button
+                onClick={() => setShowTimer(!showTimer)}
+                variant="outline"
+                size="sm"
+                className="lg:hidden flex items-center gap-2"
+              >
+                <Timer className="h-4 w-4" />
+              </Button>
+              
+              {/* Desktop Timer */}
+              <div className="hidden lg:block">
+                <PomodoroTimer />
+              </div>
+              
               <Button
                 onClick={handleSignOut}
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-2"
+                className="flex items-center gap-1 lg:gap-2 text-xs lg:text-sm px-2 lg:px-4"
               >
-                <LogOut className="h-4 w-4" />
-                Sign Out
+                <LogOut className="h-3 w-3 lg:h-4 lg:w-4" />
+                <span className="hidden sm:inline">Sign Out</span>
               </Button>
             </div>
           </div>
+          
+          {/* Mobile Timer */}
+          {showTimer && (
+            <div className="lg:hidden mt-4 flex justify-center">
+              <PomodoroTimer />
+            </div>
+          )}
         </div>
       </div>
 
