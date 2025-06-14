@@ -17,7 +17,7 @@ export const TaskDashboard = () => {
     totalBatches: batches.length,
     todayPomodoros: pomodoroSessions.filter(s => {
       const today = new Date().toDateString();
-      return s.startedAt.toDateString() === today && s.completed;
+      return s.started_at.toDateString() === today && s.completed;
     }).length,
   };
 
@@ -193,9 +193,9 @@ export const TaskDashboard = () => {
                         <Badge className={`text-xs ${getStatusColor(task.status)}`}>
                           {task.status.replace('-', ' ')}
                         </Badge>
-                        {task.estimatedDuration && (
+                        {task.estimated_duration && (
                           <span className="text-xs text-slate-500">
-                            {task.estimatedDuration}min
+                            {task.estimated_duration}min
                           </span>
                         )}
                       </div>

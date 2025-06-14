@@ -81,9 +81,9 @@ export const GTDMatrix = () => {
                             <Badge className={`text-xs ${getPriorityColor(task.priority)}`}>
                               {task.priority}
                             </Badge>
-                            {task.estimatedDuration && (
+                            {task.estimated_duration && (
                               <span className="text-xs text-slate-500">
-                                {task.estimatedDuration}min
+                                {task.estimated_duration}min
                               </span>
                             )}
                           </div>

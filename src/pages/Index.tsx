@@ -11,10 +11,13 @@ import { TaskBatches } from "@/components/TaskBatches";
 import { AuthForm } from "@/components/AuthForm";
 import { AdminPanel } from "@/components/AdminPanel";
 import { StickyNotesWidget } from "@/components/StickyNotesWidget";
+import { KanbanBoard } from "@/components/KanbanBoard";
+import { AnalyticsCharts } from "@/components/AnalyticsCharts";
+import { GoogleIntegration } from "@/components/GoogleIntegration";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, Settings, Users } from "lucide-react";
+import { LogOut, Settings, Users, BarChart, Calendar, Kanban } from "lucide-react";
 import { useTaskStore } from "@/store/taskStore";
 import { toast } from "@/hooks/use-toast";
 
@@ -125,20 +128,29 @@ const Index = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className={`grid w-full ${canAccessAdminFeatures ? 'grid-cols-7' : 'grid-cols-5'} bg-white/60 backdrop-blur-sm`}>
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 xl:grid-cols-9 bg-white/60 backdrop-blur-sm">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="add-task">Add Task</TabsTrigger>
+            <TabsTrigger value="kanban" className="flex items-center gap-2">
+              <Kanban className="h-4 w-4" />
+              Kanban
+            </TabsTrigger>
             <TabsTrigger value="gtd">GTD Matrix</TabsTrigger>
             <TabsTrigger value="batches">Batches</TabsTrigger>
-            <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            <TabsTrigger value="calendar" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Calendar
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="google">Google API</TabsTrigger>
             {canAccessAdminFeatures && (
               <TabsTrigger value="admin" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 {isAdmin ? 'Admin' : 'Sub-Admin'}
               </TabsTrigger>
-            )}
-            {canAccessAdminFeatures && (
-              <TabsTrigger value="projects">Projects</TabsTrigger>
             )}
           </TabsList>
 
@@ -159,6 +171,10 @@ const Index = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="kanban">
+            <KanbanBoard />
+          </TabsContent>
+
           <TabsContent value="gtd">
             <GTDMatrix />
           </TabsContent>
@@ -171,18 +187,17 @@ const Index = () => {
             <CalendarView />
           </TabsContent>
 
+          <TabsContent value="analytics">
+            <AnalyticsCharts />
+          </TabsContent>
+
+          <TabsContent value="google">
+            <GoogleIntegration />
+          </TabsContent>
+
           {canAccessAdminFeatures && (
             <TabsContent value="admin">
               <AdminPanel />
-            </TabsContent>
-          )}
-
-          {canAccessAdminFeatures && (
-            <TabsContent value="projects">
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-slate-200">
-                <h2 className="text-xl font-semibold mb-4">Project Management</h2>
-                <p className="text-slate-600">Project management features coming soon...</p>
-              </Card>
             </TabsContent>
           )}
         </Tabs>

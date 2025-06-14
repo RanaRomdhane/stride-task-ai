@@ -226,6 +226,7 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
         ...updates,
         deadline: updates.deadline?.toISOString(),
         completed_at: updates.completed_at?.toISOString(),
+        created_at: updates.created_at?.toISOString(),
       };
 
       const { error } = await supabase
@@ -461,12 +462,17 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Convert dates to ISO strings for database
+      const dbData = {
+        ...projectData,
+        manager_id: user.id,
+        start_date: projectData.start_date?.toISOString(),
+        end_date: projectData.end_date?.toISOString(),
+      };
+
       const { data, error } = await supabase
         .from('projects')
-        .insert([{
-          ...projectData,
-          manager_id: user.id,
-        }])
+        .insert([dbData])
         .select()
         .single();
 
@@ -541,9 +547,16 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
 
   updateStickyNote: async (id, updates) => {
     try {
+      // Convert dates to ISO strings for database
+      const dbUpdates = {
+        ...updates,
+        created_at: updates.created_at?.toISOString(),
+        updated_at: updates.updated_at?.toISOString(),
+      };
+
       const { error } = await supabase
         .from('sticky_notes')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id);
 
       if (error) throw error;
