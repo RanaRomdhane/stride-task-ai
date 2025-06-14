@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,17 +41,12 @@ export const UserManagementPanel = ({ isAdmin, currentUserDepartment }: UserMana
     try {
       setLoading(true);
       
-      // First, get user roles that this user can see
-      let rolesQuery = supabase
+      // Fetch user roles that this user can see. RLS policies on the server
+      // will handle filtering for admins and sub-admins automatically.
+      const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role, department, created_at');
       
-      // If sub-admin, only get users from same department
-      if (!isAdmin && currentUserDepartment) {
-        rolesQuery = rolesQuery.eq('department', currentUserDepartment);
-      }
-
-      const { data: roles, error: rolesError } = await rolesQuery;
       if (rolesError) throw rolesError;
 
       // Then get profiles for these users
@@ -63,6 +57,8 @@ export const UserManagementPanel = ({ isAdmin, currentUserDepartment }: UserMana
         return;
       }
 
+      // The RLS policy on 'profiles' will ensure that only profiles the current
+      // user is allowed to see are returned.
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, full_name')
