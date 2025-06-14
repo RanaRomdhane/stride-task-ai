@@ -9,7 +9,190 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      pomodoro_sessions: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          duration: number
+          id: string
+          started_at: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          duration: number
+          id?: string
+          started_at?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          duration?: number
+          id?: string
+          started_at?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pomodoro_sessions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          default_pomodoro_duration: number | null
+          full_name: string | null
+          id: string
+          timezone: string | null
+          updated_at: string
+          work_hours_end: string | null
+          work_hours_start: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          default_pomodoro_duration?: number | null
+          full_name?: string | null
+          id: string
+          timezone?: string | null
+          updated_at?: string
+          work_hours_end?: string | null
+          work_hours_start?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          default_pomodoro_duration?: number | null
+          full_name?: string | null
+          id?: string
+          timezone?: string | null
+          updated_at?: string
+          work_hours_end?: string | null
+          work_hours_start?: string | null
+        }
+        Relationships: []
+      }
+      task_batches: {
+        Row: {
+          context: string | null
+          created_at: string
+          id: string
+          name: string
+          priority: Database["public"]["Enums"]["batch_priority"]
+          scheduled: string | null
+          tasks: string[] | null
+          total_duration: number
+          user_id: string
+        }
+        Insert: {
+          context?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          priority?: Database["public"]["Enums"]["batch_priority"]
+          scheduled?: string | null
+          tasks?: string[] | null
+          total_duration?: number
+          user_id: string
+        }
+        Update: {
+          context?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          priority?: Database["public"]["Enums"]["batch_priority"]
+          scheduled?: string | null
+          tasks?: string[] | null
+          total_duration?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          batch_id: string | null
+          category: string | null
+          completed_at: string | null
+          context: string | null
+          created_at: string
+          deadline: string | null
+          dependencies: string[] | null
+          description: string | null
+          estimated_duration: number
+          id: string
+          important: boolean
+          pomodoro_sessions: number
+          priority: Database["public"]["Enums"]["task_priority"]
+          status: Database["public"]["Enums"]["task_status"]
+          tags: string[] | null
+          title: string
+          updated_at: string
+          urgent: boolean
+          user_id: string
+        }
+        Insert: {
+          batch_id?: string | null
+          category?: string | null
+          completed_at?: string | null
+          context?: string | null
+          created_at?: string
+          deadline?: string | null
+          dependencies?: string[] | null
+          description?: string | null
+          estimated_duration?: number
+          id?: string
+          important?: boolean
+          pomodoro_sessions?: number
+          priority?: Database["public"]["Enums"]["task_priority"]
+          status?: Database["public"]["Enums"]["task_status"]
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          urgent?: boolean
+          user_id: string
+        }
+        Update: {
+          batch_id?: string | null
+          category?: string | null
+          completed_at?: string | null
+          context?: string | null
+          created_at?: string
+          deadline?: string | null
+          dependencies?: string[] | null
+          description?: string | null
+          estimated_duration?: number
+          id?: string
+          important?: boolean
+          pomodoro_sessions?: number
+          priority?: Database["public"]["Enums"]["task_priority"]
+          status?: Database["public"]["Enums"]["task_status"]
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          urgent?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_tasks_batch_id"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "task_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +201,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      batch_priority: "low" | "medium" | "high"
+      task_priority: "low" | "medium" | "high" | "urgent"
+      task_status:
+        | "inbox"
+        | "next-action"
+        | "waiting-for"
+        | "project"
+        | "someday-maybe"
+        | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +324,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      batch_priority: ["low", "medium", "high"],
+      task_priority: ["low", "medium", "high", "urgent"],
+      task_status: [
+        "inbox",
+        "next-action",
+        "waiting-for",
+        "project",
+        "someday-maybe",
+        "completed",
+      ],
+    },
   },
 } as const

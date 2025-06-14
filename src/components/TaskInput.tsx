@@ -23,7 +23,7 @@ export const TaskInput = () => {
     priority: "medium" as const,
     status: "inbox" as const,
     category: "",
-    estimatedDuration: 30,
+    estimated_duration: 30,
     deadline: undefined as Date | undefined,
     urgent: false,
     important: false,
@@ -34,7 +34,7 @@ export const TaskInput = () => {
 
   const [newTag, setNewTag] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.title.trim()) {
@@ -46,7 +46,7 @@ export const TaskInput = () => {
       return;
     }
 
-    addTask(formData);
+    await addTask(formData);
     
     // Reset form
     setFormData({
@@ -55,7 +55,7 @@ export const TaskInput = () => {
       priority: "medium",
       status: "inbox",
       category: "",
-      estimatedDuration: 30,
+      estimated_duration: 30,
       deadline: undefined,
       urgent: false,
       important: false,
@@ -222,8 +222,8 @@ export const TaskInput = () => {
             <Input
               id="duration"
               type="number"
-              value={formData.estimatedDuration}
-              onChange={(e) => setFormData(prev => ({ ...prev, estimatedDuration: parseInt(e.target.value) || 0 }))}
+              value={formData.estimated_duration}
+              onChange={(e) => setFormData(prev => ({ ...prev, estimated_duration: parseInt(e.target.value) || 0 }))}
               min="5"
               max="480"
               className="mt-1"
@@ -251,7 +251,7 @@ export const TaskInput = () => {
                   selected={formData.deadline}
                   onSelect={(date) => setFormData(prev => ({ ...prev, deadline: date }))}
                   initialFocus
-                  className="p-3 pointer-events-auto"
+                  className="p-3"
                 />
               </PopoverContent>
             </Popover>
