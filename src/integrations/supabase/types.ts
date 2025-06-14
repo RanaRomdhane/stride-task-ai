@@ -407,6 +407,14 @@ export type Database = {
         Args: { _viewer_id: string; _target_user_id: string }
         Returns: boolean
       }
+      get_my_department: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_my_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       has_role: {
         Args: {
           _user_id: string
