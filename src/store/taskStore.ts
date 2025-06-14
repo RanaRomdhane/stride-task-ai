@@ -221,12 +221,13 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
 
   updateTask: async (id, updates) => {
     try {
-      // Convert dates to ISO strings for database
+      // Convert dates to ISO strings for database, excluding updated_at
       const dbUpdates = {
         ...updates,
         deadline: updates.deadline?.toISOString(),
         completed_at: updates.completed_at?.toISOString(),
         created_at: updates.created_at?.toISOString(),
+        updated_at: undefined, // Let the database handle this
       };
 
       const { error } = await supabase

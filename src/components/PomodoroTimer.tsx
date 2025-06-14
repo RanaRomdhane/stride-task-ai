@@ -203,10 +203,10 @@ export const PomodoroTimer = () => {
           {currentPomodoro && !isBreak && (
             <div className="text-center p-2 bg-blue-50 rounded-lg">
               <div className="text-sm font-medium text-blue-900">
-                Working on: {tasks.find(t => t.id === currentPomodoro.taskId)?.title}
+                Working on: {tasks.find(t => t.id === currentPomodoro.task_id)?.title}
               </div>
               <div className="text-xs text-blue-600">
-                Session #{tasks.find(t => t.id === currentPomodoro.taskId)?.pomodoroSessions + 1}
+                Session #{(tasks.find(t => t.id === currentPomodoro.task_id)?.pomodoro_sessions || 0) + 1}
               </div>
             </div>
           )}

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, FileText, Table, ExternalLink, Sync } from "lucide-react";
+import { Calendar, FileText, Table, ExternalLink, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export const GoogleIntegration = () => {
@@ -130,7 +130,7 @@ export const GoogleIntegration = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <Button onClick={syncCalendar} variant="outline" className="w-full">
-                <Sync className="h-4 w-4 mr-2" />
+                <RefreshCw className="h-4 w-4 mr-2" />
                 Sync Calendar
               </Button>
               
@@ -162,7 +162,7 @@ export const GoogleIntegration = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <Button onClick={syncDocs} variant="outline" className="w-full">
-                <Sync className="h-4 w-4 mr-2" />
+                <RefreshCw className="h-4 w-4 mr-2" />
                 Sync Documents
               </Button>
               
@@ -194,7 +194,7 @@ export const GoogleIntegration = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <Button onClick={syncSheets} variant="outline" className="w-full">
-                <Sync className="h-4 w-4 mr-2" />
+                <RefreshCw className="h-4 w-4 mr-2" />
                 Sync Sheets
               </Button>
               

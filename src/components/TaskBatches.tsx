@@ -164,7 +164,7 @@ export const TaskBatches = () => {
                       <div className="flex items-center gap-4">
                         <span className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
-                          {batch.totalDuration}min
+                          {batch.total_duration}min
                         </span>
                         <span>{batch.tasks.length} tasks</span>
                       </div>
@@ -187,7 +187,7 @@ export const TaskBatches = () => {
                                 {task.priority}
                               </Badge>
                               <span className="text-xs text-slate-500">
-                                {task.estimatedDuration}min
+                                {task.estimated_duration}min
                               </span>
                             </div>
                           </div>
