@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Mail, Lock, User, ArrowRight, Sparkles } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, Sparkles, CheckCircle } from "lucide-react";
 
 interface AuthFormProps {
   onAuthSuccess: () => void;
@@ -42,15 +42,14 @@ export const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
       if (error) throw error;
 
       toast({
-        title: "Welcome to TaskMaster! ✨",
-        description: "Account created successfully. You can now sign in and start managing your tasks.",
+        title: "Account Created Successfully! ✨",
+        description: "Welcome aboard! You can now access your personalized workspace.",
       });
       
-      // Switch to sign in tab after successful signup
       setActiveTab("signin");
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Registration Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -73,12 +72,12 @@ export const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
 
       onAuthSuccess();
       toast({
-        title: "Welcome back! 🎉",
-        description: "You've been signed in successfully. Let's get productive!",
+        title: "Welcome Back! 🎉",
+        description: "Ready to boost your productivity today?",
       });
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Sign In Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -88,173 +87,196 @@ export const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
   };
 
   return (
-    <div className="relative">
-      {/* Floating decorative elements */}
-      <div className="absolute -top-4 -left-4 w-20 h-20 bg-gradient-to-br from-blue-200/30 to-indigo-200/30 rounded-full blur-xl animate-pulse"></div>
-      <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-gradient-to-br from-purple-200/30 to-pink-200/30 rounded-full blur-lg animate-pulse delay-1000"></div>
+    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-gradient-to-br from-blue-300/20 to-indigo-300/20 rounded-full blur-2xl animate-pulse"></div>
+        <div className="absolute top-3/4 right-1/4 w-40 h-40 bg-gradient-to-br from-purple-300/20 to-pink-300/20 rounded-full blur-2xl animate-pulse delay-1000"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-24 h-24 bg-gradient-to-br from-indigo-300/20 to-blue-300/20 rounded-full blur-xl animate-pulse delay-500"></div>
+      </div>
       
-      <Card className="w-full max-w-md bg-white/95 backdrop-blur-lg shadow-2xl border-0 overflow-hidden transition-all duration-500 hover:shadow-3xl hover:scale-[1.02]">
-        <CardHeader className="text-center pb-6 pt-8 relative">
-          <div className="absolute top-4 right-4">
-            <Sparkles className="h-5 w-5 text-blue-500 animate-pulse" />
+      <Card className="relative w-full max-w-lg bg-white/95 backdrop-blur-xl shadow-2xl border-0 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-white/30"></div>
+        
+        <CardHeader className="relative text-center pb-8 pt-10">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+            <Sparkles className="h-8 w-8 text-white" />
           </div>
-          <CardTitle className="text-2xl font-semibold text-slate-800 flex items-center justify-center gap-2">
-            Welcome to TaskMaster
+          <CardTitle className="text-3xl font-bold bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent">
+            TaskMaster AI
           </CardTitle>
-          <p className="text-sm text-slate-600 mt-2">
-            Your AI-powered productivity companion
+          <p className="text-slate-600 mt-3 text-lg font-medium">
+            Where productivity meets intelligence
           </p>
         </CardHeader>
         
-        <CardContent className="px-8 pb-8">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 bg-slate-100/80 backdrop-blur-sm p-1 rounded-xl">
+        <CardContent className="relative px-10 pb-10">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+            <TabsList className="grid w-full grid-cols-2 bg-slate-100/80 backdrop-blur-sm p-1.5 rounded-2xl h-14">
               <TabsTrigger 
                 value="signin" 
-                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300 hover:scale-105"
+                className="rounded-xl h-11 text-base font-semibold data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all duration-300"
               >
-                Sign In
+                Welcome Back
               </TabsTrigger>
               <TabsTrigger 
                 value="signup" 
-                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300 hover:scale-105"
+                className="rounded-xl h-11 text-base font-semibold data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all duration-300"
               >
-                Create Account
+                Join Today
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="signin" className="space-y-0 animate-fade-in">
-              <form onSubmit={handleSignIn} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email" className="text-slate-700 font-medium text-sm">Email</Label>
+            <TabsContent value="signin" className="space-y-0">
+              <form onSubmit={handleSignIn} className="space-y-6">
+                <div className="space-y-3">
+                  <Label htmlFor="signin-email" className="text-slate-800 font-semibold">Email Address</Label>
                   <div className="relative group">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 transition-colors group-focus-within:text-blue-500" />
+                    <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 transition-colors group-focus-within:text-blue-600" />
                     <Input
                       id="signin-email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email"
-                      className="pl-10 h-11 bg-white border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-lg transition-all duration-300 hover:border-slate-300"
+                      placeholder="you@company.com"
+                      className="pl-12 h-14 bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl text-base transition-all duration-300"
                       required
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password" className="text-slate-700 font-medium text-sm">Password</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="signin-password" className="text-slate-800 font-semibold">Password</Label>
                   <div className="relative group">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 transition-colors group-focus-within:text-blue-500" />
+                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 transition-colors group-focus-within:text-blue-600" />
                     <Input
                       id="signin-password"
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your password"
-                      className="pl-10 h-11 bg-white border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-lg transition-all duration-300 hover:border-slate-300"
+                      placeholder="••••••••"
+                      className="pl-12 h-14 bg-white/80 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl text-base transition-all duration-300"
                       required
                     />
                   </div>
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group" 
+                  className="w-full h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] text-base group" 
                   disabled={loading}
                 >
                   {loading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Signing in...
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Signing you in...
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      Sign In
-                      <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    <div className="flex items-center gap-3">
+                      <span>Access Dashboard</span>
+                      <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
                     </div>
                   )}
                 </Button>
               </form>
             </TabsContent>
 
-            <TabsContent value="signup" className="space-y-0 animate-fade-in">
-              <form onSubmit={handleSignUp} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name" className="text-slate-700 font-medium text-sm">Full Name</Label>
+            <TabsContent value="signup" className="space-y-0">
+              <form onSubmit={handleSignUp} className="space-y-6">
+                <div className="space-y-3">
+                  <Label htmlFor="signup-name" className="text-slate-800 font-semibold">Full Name</Label>
                   <div className="relative group">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 transition-colors group-focus-within:text-green-500" />
+                    <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 transition-colors group-focus-within:text-emerald-600" />
                     <Input
                       id="signup-name"
                       type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Enter your full name"
-                      className="pl-10 h-11 bg-white border-slate-200 focus:border-green-500 focus:ring-green-500/20 rounded-lg transition-all duration-300 hover:border-slate-300"
+                      placeholder="John Doe"
+                      className="pl-12 h-14 bg-white/80 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl text-base transition-all duration-300"
                       required
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email" className="text-slate-700 font-medium text-sm">Email</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="signup-email" className="text-slate-800 font-semibold">Email Address</Label>
                   <div className="relative group">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 transition-colors group-focus-within:text-green-500" />
+                    <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 transition-colors group-focus-within:text-emerald-600" />
                     <Input
                       id="signup-email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email"
-                      className="pl-10 h-11 bg-white border-slate-200 focus:border-green-500 focus:ring-green-500/20 rounded-lg transition-all duration-300 hover:border-slate-300"
+                      placeholder="you@company.com"
+                      className="pl-12 h-14 bg-white/80 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl text-base transition-all duration-300"
                       required
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password" className="text-slate-700 font-medium text-sm">Password</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="signup-password" className="text-slate-800 font-semibold">Password</Label>
                   <div className="relative group">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 transition-colors group-focus-within:text-green-500" />
+                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 transition-colors group-focus-within:text-emerald-600" />
                     <Input
                       id="signup-password"
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Create a secure password"
-                      className="pl-10 h-11 bg-white border-slate-200 focus:border-green-500 focus:ring-green-500/20 rounded-lg transition-all duration-300 hover:border-slate-300"
+                      placeholder="••••••••"
+                      className="pl-12 h-14 bg-white/80 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl text-base transition-all duration-300"
                       required
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role-select" className="text-slate-700 font-medium text-sm">Your Role</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="role-select" className="text-slate-800 font-semibold">Professional Role</Label>
                   <Select value={role} onValueChange={setRole} required>
-                    <SelectTrigger className="h-11 bg-white border-slate-200 focus:border-green-500 focus:ring-green-500/20 rounded-lg transition-all duration-300 hover:border-slate-300">
-                      <SelectValue placeholder="Select your role in the organization" />
+                    <SelectTrigger className="h-14 bg-white/80 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl text-base">
+                      <SelectValue placeholder="Choose your position" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border-slate-200 rounded-lg shadow-xl">
-                      <SelectItem value="admin" className="rounded-lg hover:bg-slate-50">
-                        Admin - Full system access
+                    <SelectContent className="bg-white border-slate-200 rounded-xl shadow-2xl">
+                      <SelectItem value="admin" className="rounded-lg hover:bg-emerald-50 p-4">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="w-4 h-4 text-emerald-600" />
+                          <div>
+                            <div className="font-semibold">Administrator</div>
+                            <div className="text-sm text-slate-500">Complete system control</div>
+                          </div>
+                        </div>
                       </SelectItem>
-                      <SelectItem value="sub_admin" className="rounded-lg hover:bg-slate-50">
-                        Sub Admin - Management access
+                      <SelectItem value="sub_admin" className="rounded-lg hover:bg-blue-50 p-4">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="w-4 h-4 text-blue-600" />
+                          <div>
+                            <div className="font-semibold">Team Manager</div>
+                            <div className="text-sm text-slate-500">Department oversight</div>
+                          </div>
+                        </div>
                       </SelectItem>
-                      <SelectItem value="employee" className="rounded-lg hover:bg-slate-50">
-                        Employee - Standard access
+                      <SelectItem value="employee" className="rounded-lg hover:bg-purple-50 p-4">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="w-4 h-4 text-purple-600" />
+                          <div>
+                            <div className="font-semibold">Team Member</div>
+                            <div className="text-sm text-slate-500">Individual contributor</div>
+                          </div>
+                        </div>
                       </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full h-11 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group" 
+                  className="w-full h-14 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] text-base group" 
                   disabled={loading}
                 >
                   {loading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Creating account...
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Creating your workspace...
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      Create Account
-                      <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    <div className="flex items-center gap-3">
+                      <span>Start Your Journey</span>
+                      <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
                     </div>
                   )}
                 </Button>
