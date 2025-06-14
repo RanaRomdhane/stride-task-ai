@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -92,18 +91,6 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="w-full max-w-md animate-scale-in">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <Logo />
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
-                TaskMaster AI
-              </h1>
-            </div>
-            <p className="text-slate-600 text-lg">
-              AI-Powered Task Management
-            </p>
-          </div>
-          
           <AuthForm onAuthSuccess={handleAuthSuccess} />
         </div>
       </div>
