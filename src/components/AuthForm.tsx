@@ -12,6 +12,12 @@ interface AuthFormProps {
   onAuthSuccess: () => void;
 }
 
+const demoAccounts = [
+  { email: "admin@taskmaster.ai", password: "Admin123!", role: "Admin" },
+  { email: "subadmin@taskmaster.ai", password: "SubAdmin123!", role: "Sub-Admin" },
+  { email: "employee@taskmaster.ai", password: "Employee123!", role: "Employee" },
+];
+
 export const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -38,7 +44,7 @@ export const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
 
       toast({
         title: "Success!",
-        description: "Check your email for the confirmation link.",
+        description: "Account created successfully. You can now sign in.",
       });
     } catch (error: any) {
       toast({
@@ -79,6 +85,32 @@ export const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
     }
   };
 
+  const handleDemoLogin = async (demoEmail: string, demoPassword: string, role: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: demoEmail,
+        password: demoPassword,
+      });
+
+      if (error) throw error;
+
+      onAuthSuccess();
+      toast({
+        title: "Demo Login Successful!",
+        description: `Logged in as ${role} user.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md bg-white/80 backdrop-blur-sm">
@@ -92,9 +124,10 @@ export const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="demo">Demo</TabsTrigger>
             </TabsList>
 
             <TabsContent value="signin">
@@ -174,6 +207,31 @@ export const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
                   {loading ? "Creating account..." : "Sign Up"}
                 </Button>
               </form>
+            </TabsContent>
+
+            <TabsContent value="demo">
+              <div className="space-y-4">
+                <div className="text-center text-sm text-gray-600 mb-4">
+                  Try the app with pre-configured demo accounts:
+                </div>
+                {demoAccounts.map((account) => (
+                  <Button
+                    key={account.email}
+                    onClick={() => handleDemoLogin(account.email, account.password, account.role)}
+                    variant="outline"
+                    className="w-full justify-start"
+                    disabled={loading}
+                  >
+                    <div className="text-left">
+                      <div className="font-semibold">{account.role} Demo</div>
+                      <div className="text-xs text-gray-500">{account.email}</div>
+                    </div>
+                  </Button>
+                ))}
+                <div className="text-xs text-gray-500 text-center mt-4">
+                  Demo accounts showcase different permission levels
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>
