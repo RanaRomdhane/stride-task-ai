@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Plus, Edit, Trash2 } from "lucide-react";
+import { Users, Plus, Edit, Trash2, UserPlus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useTaskStore } from "@/store/taskStore";
 
@@ -121,6 +122,43 @@ export const UserManagementPanel = ({ isAdmin, currentUserDepartment }: UserMana
     }
   };
 
+  const assignToDepartment = async (userId: string) => {
+    if (!currentUserDepartment) {
+      toast({
+        title: "Error",
+        description: "You don't have a department assigned",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .upsert({
+          user_id: userId,
+          role: 'employee',
+          department: currentUserDepartment,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `User assigned to ${currentUserDepartment} department`,
+      });
+
+      fetchManagedUsers();
+    } catch (error) {
+      console.error('Error assigning user to department:', error);
+      toast({
+        title: "Error",
+        description: "Failed to assign user to department",
+        variant: "destructive",
+      });
+    }
+  };
+
   const deleteUserRole = async (userId: string) => {
     try {
       const { error } = await supabase
@@ -162,8 +200,19 @@ export const UserManagementPanel = ({ isAdmin, currentUserDepartment }: UserMana
   const canEditUser = (user: UserWithRole) => {
     if (isAdmin) return true;
     if (!currentUserDepartment) return false;
-    return user.department === currentUserDepartment && user.role !== 'admin';
+    // Sub-admins can edit users in their department or users without departments
+    return (user.department === currentUserDepartment || !user.department) && user.role !== 'admin';
   };
+
+  const canAssignToDepartment = (user: UserWithRole) => {
+    // Only sub-admins can assign unassigned users to their department
+    return !isAdmin && currentUserDepartment && !user.department;
+  };
+
+  // Separate users into categories for better display
+  const usersInDepartment = users.filter(user => user.department === currentUserDepartment);
+  const usersWithoutDepartment = users.filter(user => !user.department);
+  const usersInOtherDepartments = users.filter(user => user.department && user.department !== currentUserDepartment);
 
   if (loading) {
     return (
@@ -183,109 +232,227 @@ export const UserManagementPanel = ({ isAdmin, currentUserDepartment }: UserMana
         <CardDescription>
           {isAdmin 
             ? "Manage all users in the system" 
-            : `Manage users in ${currentUserDepartment} department`
+            : `Manage users in ${currentUserDepartment} department and assign unassigned users`
           }
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {users.map((user) => (
-            <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg bg-white/50">
-              <div className="flex items-center space-x-4">
-                <div>
-                  <p className="font-medium">{user.full_name || 'No name'}</p>
-                  <p className="text-sm text-gray-500">{user.email}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge className={getRoleBadgeColor(user.role)}>
-                      {user.role ? user.role.replace('_', ' ').toUpperCase() : 'NO ROLE'}
-                    </Badge>
-                    {user.department && (
-                      <Badge variant="outline" className="text-xs">
-                        {user.department}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                {canEditUser(user) && (
-                  <>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setEditingUser(user);
-                            setNewRole(user.role || 'employee');
-                            setNewDepartment(user.department || '');
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Edit User Role</DialogTitle>
-                          <DialogDescription>
-                            Update the role and department for {user.full_name}
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="role">Role</Label>
-                            <Select value={newRole} onValueChange={(value: any) => setNewRole(value)}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select role" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="employee">Employee</SelectItem>
-                                {(isAdmin || currentUserDepartment) && (
-                                  <SelectItem value="sub_admin">Sub-admin</SelectItem>
-                                )}
-                                {isAdmin && (
-                                  <SelectItem value="admin">Admin</SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          {isAdmin && (
-                            <div>
-                              <Label htmlFor="department">Department</Label>
-                              <Input
-                                value={newDepartment}
-                                onChange={(e) => setNewDepartment(e.target.value)}
-                                placeholder="Enter department"
-                              />
-                            </div>
+        <div className="space-y-6">
+          {/* Users in current department */}
+          {(isAdmin || usersInDepartment.length > 0) && (
+            <div>
+              <h3 className="text-lg font-medium mb-3">
+                {isAdmin ? "All Users" : `${currentUserDepartment} Department`}
+              </h3>
+              <div className="space-y-2">
+                {(isAdmin ? users : usersInDepartment).map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg bg-white/50">
+                    <div className="flex items-center space-x-4">
+                      <div>
+                        <p className="font-medium">{user.full_name || 'No name'}</p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge className={getRoleBadgeColor(user.role)}>
+                            {user.role ? user.role.replace('_', ' ').toUpperCase() : 'NO ROLE'}
+                          </Badge>
+                          {user.department && (
+                            <Badge variant="outline" className="text-xs">
+                              {user.department}
+                            </Badge>
                           )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      {canEditUser(user) && (
+                        <>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingUser(user);
+                                  setNewRole(user.role || 'employee');
+                                  setNewDepartment(user.department || '');
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Edit User Role</DialogTitle>
+                                <DialogDescription>
+                                  Update the role and department for {user.full_name}
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div>
+                                  <Label htmlFor="role">Role</Label>
+                                  <Select value={newRole} onValueChange={(value: any) => setNewRole(value)}>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="employee">Employee</SelectItem>
+                                      {(isAdmin || currentUserDepartment) && (
+                                        <SelectItem value="sub_admin">Sub-admin</SelectItem>
+                                      )}
+                                      {isAdmin && (
+                                        <SelectItem value="admin">Admin</SelectItem>
+                                      )}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                
+                                {isAdmin && (
+                                  <div>
+                                    <Label htmlFor="department">Department</Label>
+                                    <Input
+                                      value={newDepartment}
+                                      onChange={(e) => setNewDepartment(e.target.value)}
+                                      placeholder="Enter department"
+                                    />
+                                  </div>
+                                )}
+                                
+                                <Button
+                                  onClick={() => updateUserRole(user.id, newRole, newDepartment)}
+                                  className="w-full"
+                                >
+                                  Update Role
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                           
                           <Button
-                            onClick={() => updateUserRole(user.id, newRole, newDepartment)}
-                            className="w-full"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteUserRole(user.id)}
+                            className="text-red-600 hover:text-red-700"
                           >
-                            Update Role
+                            <Trash2 className="h-4 w-4" />
                           </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => deleteUserRole(user.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </>
-                )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-          
+          )}
+
+          {/* Users without department (only visible to sub-admins) */}
+          {!isAdmin && usersWithoutDepartment.length > 0 && (
+            <div>
+              <h3 className="text-lg font-medium mb-3 text-orange-600">
+                Unassigned Users
+              </h3>
+              <p className="text-sm text-gray-600 mb-3">
+                These users don't have a department. You can assign them to your department.
+              </p>
+              <div className="space-y-2">
+                {usersWithoutDepartment.map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg bg-orange-50/50">
+                    <div className="flex items-center space-x-4">
+                      <div>
+                        <p className="font-medium">{user.full_name || 'No name'}</p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge className={getRoleBadgeColor(user.role)}>
+                            {user.role ? user.role.replace('_', ' ').toUpperCase() : 'NO ROLE'}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs text-orange-600">
+                            No Department
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      {canAssignToDepartment(user) && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => assignToDepartment(user.id)}
+                          className="bg-orange-500 hover:bg-orange-600"
+                        >
+                          <UserPlus className="h-4 w-4 mr-1" />
+                          Assign to {currentUserDepartment}
+                        </Button>
+                      )}
+                      {canEditUser(user) && (
+                        <>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingUser(user);
+                                  setNewRole(user.role || 'employee');
+                                  setNewDepartment(user.department || '');
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Edit User Role</DialogTitle>
+                                <DialogDescription>
+                                  Update the role and department for {user.full_name}
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div>
+                                  <Label htmlFor="role">Role</Label>
+                                  <Select value={newRole} onValueChange={(value: any) => setNewRole(value)}>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="employee">Employee</SelectItem>
+                                      {currentUserDepartment && (
+                                        <SelectItem value="sub_admin">Sub-admin</SelectItem>
+                                      )}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                
+                                <div>
+                                  <Label htmlFor="department">Department</Label>
+                                  <Input
+                                    value={currentUserDepartment || ''}
+                                    disabled
+                                    placeholder="Your department"
+                                  />
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    You can only assign users to your own department
+                                  </p>
+                                </div>
+                                
+                                <Button
+                                  onClick={() => updateUserRole(user.id, newRole, currentUserDepartment)}
+                                  className="w-full"
+                                >
+                                  Update Role & Assign to Department
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {users.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               No users found in your scope.
