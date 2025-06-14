@@ -9,6 +9,61 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          parent_id: string | null
+          project_id: string | null
+          task_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          project_id?: string | null
+          task_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          project_id?: string | null
+          task_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pomodoro_sessions: {
         Row: {
           completed: boolean
@@ -83,6 +138,92 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          budget: number | null
+          created_at: string
+          description: string | null
+          end_date: string | null
+          expenses: number | null
+          id: string
+          manager_id: string
+          name: string
+          start_date: string | null
+          status: string | null
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          budget?: number | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          expenses?: number | null
+          id?: string
+          manager_id: string
+          name: string
+          start_date?: string | null
+          status?: string | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          budget?: number | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          expenses?: number | null
+          id?: string
+          manager_id?: string
+          name?: string
+          start_date?: string | null
+          status?: string | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sticky_notes: {
+        Row: {
+          color: string | null
+          content: string
+          created_at: string
+          id: string
+          position_x: number | null
+          position_y: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          position_x?: number | null
+          position_y?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          position_x?: number | null
+          position_y?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       task_batches: {
         Row: {
           context: string | null
@@ -134,6 +275,7 @@ export type Database = {
           important: boolean
           pomodoro_sessions: number
           priority: Database["public"]["Enums"]["task_priority"]
+          project_id: string | null
           status: Database["public"]["Enums"]["task_status"]
           tags: string[] | null
           title: string
@@ -155,6 +297,7 @@ export type Database = {
           important?: boolean
           pomodoro_sessions?: number
           priority?: Database["public"]["Enums"]["task_priority"]
+          project_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           tags?: string[] | null
           title: string
@@ -176,6 +319,7 @@ export type Database = {
           important?: boolean
           pomodoro_sessions?: number
           priority?: Database["public"]["Enums"]["task_priority"]
+          project_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           tags?: string[] | null
           title?: string
@@ -191,16 +335,88 @@ export type Database = {
             referencedRelation: "task_batches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          manager_id: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          manager_id?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          manager_id?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          department: string | null
+          id: string
+          manager_id: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          id?: string
+          manager_id?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          id?: string
+          manager_id?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_view_user_data: {
+        Args: { _viewer_id: string; _target_user_id: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "sub_admin" | "employee"
       batch_priority: "low" | "medium" | "high"
       task_priority: "low" | "medium" | "high" | "urgent"
       task_status:
@@ -325,6 +541,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "sub_admin", "employee"],
       batch_priority: ["low", "medium", "high"],
       task_priority: ["low", "medium", "high", "urgent"],
       task_status: [

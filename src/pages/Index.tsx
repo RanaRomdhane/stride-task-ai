@@ -9,17 +9,19 @@ import { PomodoroTimer } from "@/components/PomodoroTimer";
 import { CalendarView } from "@/components/CalendarView";
 import { TaskBatches } from "@/components/TaskBatches";
 import { AuthForm } from "@/components/AuthForm";
+import { AdminPanel } from "@/components/AdminPanel";
+import { StickyNotesWidget } from "@/components/StickyNotesWidget";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings, Users } from "lucide-react";
 import { useTaskStore } from "@/store/taskStore";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const { fetchTasks, fetchBatches } = useTaskStore();
+  const { fetchTasks, fetchBatches, fetchUserRole, fetchProjects, fetchStickyNotes, userRole } = useTaskStore();
 
   useEffect(() => {
     // Set up auth state listener
@@ -31,6 +33,9 @@ const Index = () => {
           setTimeout(() => {
             fetchTasks();
             fetchBatches();
+            fetchUserRole();
+            fetchProjects();
+            fetchStickyNotes();
           }, 0);
         }
       }
@@ -42,12 +47,15 @@ const Index = () => {
       if (session?.user) {
         fetchTasks();
         fetchBatches();
+        fetchUserRole();
+        fetchProjects();
+        fetchStickyNotes();
       }
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchTasks, fetchBatches]);
+  }, [fetchTasks, fetchBatches, fetchUserRole, fetchProjects, fetchStickyNotes]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -76,6 +84,10 @@ const Index = () => {
     return <AuthForm onAuthSuccess={handleAuthSuccess} />;
   }
 
+  const isAdmin = userRole?.role === 'admin';
+  const isSubAdmin = userRole?.role === 'sub_admin';
+  const canAccessAdminFeatures = isAdmin || isSubAdmin;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
@@ -86,7 +98,14 @@ const Index = () => {
               <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
                 TaskMaster AI
               </h1>
-              <p className="text-sm text-slate-600">AI-Powered Task Management with GTD</p>
+              <p className="text-sm text-slate-600">
+                AI-Powered Task Management with GTD
+                {userRole && (
+                  <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                    {userRole.role.replace('_', ' ').toUpperCase()}
+                  </span>
+                )}
+              </p>
             </div>
             <div className="flex items-center space-x-4">
               <PomodoroTimer />
@@ -106,16 +125,32 @@ const Index = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-white/60 backdrop-blur-sm">
+          <TabsList className={`grid w-full ${canAccessAdminFeatures ? 'grid-cols-7' : 'grid-cols-5'} bg-white/60 backdrop-blur-sm`}>
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="add-task">Add Task</TabsTrigger>
             <TabsTrigger value="gtd">GTD Matrix</TabsTrigger>
             <TabsTrigger value="batches">Batches</TabsTrigger>
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            {canAccessAdminFeatures && (
+              <TabsTrigger value="admin" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                {isAdmin ? 'Admin' : 'Sub-Admin'}
+              </TabsTrigger>
+            )}
+            {canAccessAdminFeatures && (
+              <TabsTrigger value="projects">Projects</TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
-            <TaskDashboard />
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              <div className="lg:col-span-3">
+                <TaskDashboard />
+              </div>
+              <div className="lg:col-span-1">
+                <StickyNotesWidget />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="add-task">
@@ -135,6 +170,21 @@ const Index = () => {
           <TabsContent value="calendar">
             <CalendarView />
           </TabsContent>
+
+          {canAccessAdminFeatures && (
+            <TabsContent value="admin">
+              <AdminPanel />
+            </TabsContent>
+          )}
+
+          {canAccessAdminFeatures && (
+            <TabsContent value="projects">
+              <Card className="p-6 bg-white/80 backdrop-blur-sm border-slate-200">
+                <h2 className="text-xl font-semibold mb-4">Project Management</h2>
+                <p className="text-slate-600">Project management features coming soon...</p>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>

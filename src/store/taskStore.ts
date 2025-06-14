@@ -23,6 +23,7 @@ export interface Task {
   pomodoro_sessions: number;
   context: string; // location, tools needed, etc.
   user_id: string;
+  project_id?: string;
 }
 
 export interface TaskBatch {
@@ -47,11 +48,49 @@ export interface PomodoroSession {
   user_id: string;
 }
 
+export interface UserRole {
+  id: string;
+  user_id: string;
+  role: 'admin' | 'sub_admin' | 'employee';
+  department?: string;
+  manager_id?: string;
+  created_at: Date;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  team_id?: string;
+  manager_id: string;
+  budget?: number;
+  expenses?: number;
+  status?: string;
+  start_date?: Date;
+  end_date?: Date;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface StickyNote {
+  id: string;
+  user_id: string;
+  content: string;
+  color?: string;
+  position_x?: number;
+  position_y?: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
 interface TaskStore {
   tasks: Task[];
   batches: TaskBatch[];
   pomodoroSessions: PomodoroSession[];
   currentPomodoro?: PomodoroSession;
+  userRole?: UserRole;
+  projects: Project[];
+  stickyNotes: StickyNote[];
   loading: boolean;
   
   // Task actions
@@ -68,6 +107,17 @@ interface TaskStore {
   deleteBatch: (id: string) => Promise<void>;
   addTaskToBatch: (taskId: string, batchId: string) => Promise<void>;
   
+  // Role and project actions
+  fetchUserRole: () => Promise<void>;
+  fetchProjects: () => Promise<void>;
+  createProject: (project: Omit<Project, 'id' | 'created_at' | 'updated_at' | 'manager_id'>) => Promise<void>;
+  
+  // Sticky notes actions
+  fetchStickyNotes: () => Promise<void>;
+  createStickyNote: (note: Omit<StickyNote, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => Promise<void>;
+  updateStickyNote: (id: string, updates: Partial<StickyNote>) => Promise<void>;
+  deleteStickyNote: (id: string) => Promise<void>;
+  
   // Pomodoro actions
   startPomodoro: (taskId: string, duration?: number) => void;
   completePomodoro: () => Promise<void>;
@@ -83,6 +133,8 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
   tasks: [],
   batches: [],
   pomodoroSessions: [],
+  projects: [],
+  stickyNotes: [],
   loading: false,
   
   fetchTasks: async () => {
@@ -121,12 +173,17 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Convert dates to ISO strings for database
+      const dbData = {
+        ...taskData,
+        user_id: user.id,
+        deadline: taskData.deadline?.toISOString(),
+        completed_at: taskData.completed_at?.toISOString(),
+      };
+
       const { data, error } = await supabase
         .from('tasks')
-        .insert([{
-          ...taskData,
-          user_id: user.id,
-        }])
+        .insert([dbData])
         .select()
         .single();
 
@@ -164,9 +221,16 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
 
   updateTask: async (id, updates) => {
     try {
+      // Convert dates to ISO strings for database
+      const dbUpdates = {
+        ...updates,
+        deadline: updates.deadline?.toISOString(),
+        completed_at: updates.completed_at?.toISOString(),
+      };
+
       const { error } = await supabase
         .from('tasks')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id);
 
       if (error) throw error;
@@ -247,12 +311,16 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Convert dates to ISO strings for database
+      const dbData = {
+        ...batchData,
+        user_id: user.id,
+        scheduled: batchData.scheduled?.toISOString(),
+      };
+
       const { data, error } = await supabase
         .from('task_batches')
-        .insert([{
-          ...batchData,
-          user_id: user.id,
-        }])
+        .insert([dbData])
         .select()
         .single();
 
@@ -279,9 +347,16 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
 
   updateBatch: async (id, updates) => {
     try {
+      // Convert dates to ISO strings for database
+      const dbUpdates = {
+        ...updates,
+        scheduled: updates.scheduled?.toISOString(),
+        created_at: updates.created_at?.toISOString(),
+      };
+
       const { error } = await supabase
         .from('task_batches')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id);
 
       if (error) throw error;
@@ -329,6 +404,174 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
       await get().updateBatch(batchId, {
         tasks: [...batch.tasks, taskId],
       });
+    }
+  },
+
+  fetchUserRole: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      if (data) {
+        set({
+          userRole: {
+            ...data,
+            created_at: new Date(data.created_at),
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+    }
+  },
+
+  fetchProjects: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const projects = data?.map(project => ({
+        ...project,
+        created_at: new Date(project.created_at),
+        updated_at: new Date(project.updated_at),
+        start_date: project.start_date ? new Date(project.start_date) : undefined,
+        end_date: project.end_date ? new Date(project.end_date) : undefined,
+      })) || [];
+
+      set({ projects });
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
+  },
+
+  createProject: async (projectData) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('projects')
+        .insert([{
+          ...projectData,
+          manager_id: user.id,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newProject: Project = {
+        ...data,
+        created_at: new Date(data.created_at),
+        updated_at: new Date(data.updated_at),
+        start_date: data.start_date ? new Date(data.start_date) : undefined,
+        end_date: data.end_date ? new Date(data.end_date) : undefined,
+      };
+
+      set((state) => ({
+        projects: [newProject, ...state.projects],
+      }));
+    } catch (error) {
+      console.error('Error creating project:', error);
+    }
+  },
+
+  fetchStickyNotes: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sticky_notes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const stickyNotes = data?.map(note => ({
+        ...note,
+        created_at: new Date(note.created_at),
+        updated_at: new Date(note.updated_at),
+      })) || [];
+
+      set({ stickyNotes });
+    } catch (error) {
+      console.error('Error fetching sticky notes:', error);
+    }
+  },
+
+  createStickyNote: async (noteData) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('sticky_notes')
+        .insert([{
+          ...noteData,
+          user_id: user.id,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newNote: StickyNote = {
+        ...data,
+        created_at: new Date(data.created_at),
+        updated_at: new Date(data.updated_at),
+      };
+
+      set((state) => ({
+        stickyNotes: [newNote, ...state.stickyNotes],
+      }));
+    } catch (error) {
+      console.error('Error creating sticky note:', error);
+    }
+  },
+
+  updateStickyNote: async (id, updates) => {
+    try {
+      const { error } = await supabase
+        .from('sticky_notes')
+        .update(updates)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      set((state) => ({
+        stickyNotes: state.stickyNotes.map((note) =>
+          note.id === id ? { ...note, ...updates, updated_at: new Date() } : note
+        ),
+      }));
+    } catch (error) {
+      console.error('Error updating sticky note:', error);
+    }
+  },
+
+  deleteStickyNote: async (id) => {
+    try {
+      const { error } = await supabase
+        .from('sticky_notes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      set((state) => ({
+        stickyNotes: state.stickyNotes.filter((note) => note.id !== id),
+      }));
+    } catch (error) {
+      console.error('Error deleting sticky note:', error);
     }
   },
 
