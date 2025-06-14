@@ -2,12 +2,13 @@
 import { useState, useEffect } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
+import { enUS } from "date-fns/locale";
 import { useTaskStore } from "@/store/taskStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
 const locales = {
-  'en-US': require('date-fns/locale/en-US'),
+  'en-US': enUS,
 };
 
 const localizer = dateFnsLocalizer({
