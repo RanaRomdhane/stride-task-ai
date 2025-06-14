@@ -14,7 +14,6 @@ import { KanbanBoard } from "@/components/KanbanBoard";
 import { AnalyticsCharts } from "@/components/AnalyticsCharts";
 import { GoogleIntegration } from "@/components/GoogleIntegration";
 import { RoleBasedDashboard } from "@/components/RoleBasedDashboard";
-import { DemoAccountsPanel } from "@/components/DemoAccountsPanel";
 import { DraggablePomodoroTimer } from "@/components/DraggablePomodoroTimer";
 import { Logo } from "@/components/Logo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -104,15 +103,9 @@ const Index = () => {
             </p>
           </div>
           
-          <div className="grid gap-8 max-w-4xl mx-auto">
-            <DemoAccountsPanel />
-            <div className="flex justify-center">
-              <div className="text-center">
-                <p className="text-slate-600 mb-4">Or create your own account:</p>
-                <div className="max-w-md">
-                  <AuthForm onAuthSuccess={handleAuthSuccess} />
-                </div>
-              </div>
+          <div className="flex justify-center">
+            <div className="max-w-md w-full">
+              <AuthForm onAuthSuccess={handleAuthSuccess} />
             </div>
           </div>
         </div>
