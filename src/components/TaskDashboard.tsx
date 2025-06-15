@@ -1,220 +1,289 @@
 
-import { useTaskStore } from "@/store/taskStore";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Clock, AlertTriangle, Target, Timer, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from 'react';
+import { useTaskStore, Task } from '@/store/taskStore';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TaskCard } from '@/components/TaskCard';
+import { TaskDetail } from '@/components/TaskDetail';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CheckSquare, Clock, AlertCircle, Archive, Search, Filter, SortAsc } from 'lucide-react';
 
 export const TaskDashboard = () => {
-  const { tasks, batches, pomodoroSessions, completeTask, prioritizeTasks } = useTaskStore();
+  const { tasks, loading } = useTaskStore();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('created_at');
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
+  const handleViewTaskDetails = (task: Task) => {
+    setSelectedTask(task);
+  };
+
+  const handleBackToList = () => {
+    setSelectedTask(null);
+  };
+
+  // Filter and sort tasks
+  const filteredTasks = tasks
+    .filter(task => {
+      const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           task.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+      const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
+      
+      return matchesSearch && matchesStatus && matchesPriority;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'priority':
+          const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
+          return priorityOrder[b.priority] - priorityOrder[a.priority];
+        case 'deadline':
+          if (!a.deadline && !b.deadline) return 0;
+          if (!a.deadline) return 1;
+          if (!b.deadline) return -1;
+          return a.deadline.getTime() - b.deadline.getTime();
+        case 'title':
+          return a.title.localeCompare(b.title);
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+  // Group tasks by status for dashboard view
+  const tasksByStatus = {
+    inbox: filteredTasks.filter(task => task.status === 'inbox'),
+    'next-action': filteredTasks.filter(task => task.status === 'next-action'),
+    'waiting-for': filteredTasks.filter(task => task.status === 'waiting-for'),
+    project: filteredTasks.filter(task => task.status === 'project'),
+    'someday-maybe': filteredTasks.filter(task => task.status === 'someday-maybe'),
+    completed: filteredTasks.filter(task => task.status === 'completed'),
+  };
 
   const stats = {
     total: tasks.length,
-    completed: tasks.filter(t => t.status === 'completed').length,
-    urgent: tasks.filter(t => t.priority === 'urgent' && t.status !== 'completed').length,
-    inProgress: tasks.filter(t => t.status === 'next-action').length,
-    totalBatches: batches.length,
-    todayPomodoros: pomodoroSessions.filter(s => {
-      const today = new Date().toDateString();
-      return s.started_at.toDateString() === today && s.completed;
-    }).length,
+    completed: tasksByStatus.completed.length,
+    inProgress: tasksByStatus['next-action'].length + tasksByStatus.project.length,
+    overdue: tasks.filter(task => 
+      task.deadline && 
+      task.deadline < new Date() && 
+      task.status !== 'completed'
+    ).length,
   };
 
-  const completionRate = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
-
-  const upcomingTasks = tasks
-    .filter(t => t.status !== 'completed')
-    .sort((a, b) => {
-      const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
-      return priorityOrder[b.priority] - priorityOrder[a.priority];
-    })
-    .slice(0, 5);
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'urgent': return 'bg-red-500';
-      case 'high': return 'bg-orange-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'low': return 'bg-green-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'next-action': return 'bg-blue-100 text-blue-800';
-      case 'waiting-for': return 'bg-yellow-100 text-yellow-800';
-      case 'project': return 'bg-purple-100 text-purple-800';
-      case 'inbox': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+  if (selectedTask) {
+    return <TaskDetail task={selectedTask} onBack={handleBackToList} />;
+  }
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="bg-white/80 backdrop-blur-sm border-slate-200">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 text-sm">Total Tasks</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <CheckSquare className="h-5 w-5 text-blue-600" />
               </div>
-              <Target className="h-8 w-8 text-blue-200" />
+              <div>
+                <p className="text-sm font-medium text-slate-600">Total Tasks</p>
+                <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
+        <Card className="bg-white/80 backdrop-blur-sm border-slate-200">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-sm">Completed</p>
-                <p className="text-2xl font-bold">{stats.completed}</p>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckSquare className="h-5 w-5 text-green-600" />
               </div>
-              <CheckCircle className="h-8 w-8 text-green-200" />
+              <div>
+                <p className="text-sm font-medium text-slate-600">Completed</p>
+                <p className="text-2xl font-bold text-slate-900">{stats.completed}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white border-0">
+        <Card className="bg-white/80 backdrop-blur-sm border-slate-200">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-red-100 text-sm">Urgent</p>
-                <p className="text-2xl font-bold">{stats.urgent}</p>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Clock className="h-5 w-5 text-yellow-600" />
               </div>
-              <AlertTriangle className="h-8 w-8 text-red-200" />
+              <div>
+                <p className="text-sm font-medium text-slate-600">In Progress</p>
+                <p className="text-2xl font-bold text-slate-900">{stats.inProgress}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0">
+        <Card className="bg-white/80 backdrop-blur-sm border-slate-200">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-orange-100 text-sm">In Progress</p>
-                <p className="text-2xl font-bold">{stats.inProgress}</p>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertCircle className="h-5 w-5 text-red-600" />
               </div>
-              <Clock className="h-8 w-8 text-orange-200" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-100 text-sm">Batches</p>
-                <p className="text-2xl font-bold">{stats.totalBatches}</p>
+                <p className="text-sm font-medium text-slate-600">Overdue</p>
+                <p className="text-2xl font-bold text-slate-900">{stats.overdue}</p>
               </div>
-              <Users className="h-8 w-8 text-purple-200" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white border-0">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-indigo-100 text-sm">Pomodoros Today</p>
-                <p className="text-2xl font-bold">{stats.todayPomodoros}</p>
-              </div>
-              <Timer className="h-8 w-8 text-indigo-200" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Progress Overview */}
-        <Card className="bg-white/80 backdrop-blur-sm border-slate-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Progress Overview
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span>Overall Completion</span>
-                <span>{Math.round(completionRate)}%</span>
-              </div>
-              <Progress value={completionRate} className="h-2" />
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">Completed Tasks</span>
-                <span className="font-medium">{stats.completed}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">Remaining Tasks</span>
-                <span className="font-medium">{stats.total - stats.completed}</span>
-              </div>
+      {/* Filters and Search */}
+      <Card className="bg-white/80 backdrop-blur-sm border-slate-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filters & Search
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
             </div>
 
-            <Button 
-              onClick={prioritizeTasks} 
-              className="w-full mt-4 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
-            >
-              Reprioritize Tasks
-            </Button>
-          </CardContent>
-        </Card>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="inbox">Inbox</SelectItem>
+                <SelectItem value="next-action">Next Action</SelectItem>
+                <SelectItem value="waiting-for">Waiting For</SelectItem>
+                <SelectItem value="project">Project</SelectItem>
+                <SelectItem value="someday-maybe">Someday Maybe</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
 
-        {/* Upcoming Tasks */}
-        <Card className="bg-white/80 backdrop-blur-sm border-slate-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Top Priority Tasks
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {upcomingTasks.length === 0 ? (
-                <p className="text-slate-500 text-center py-4">No pending tasks</p>
-              ) : (
-                upcomingTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className={`w-2 h-2 rounded-full ${getPriorityColor(task.priority)}`} />
-                        <h4 className="font-medium text-sm truncate">{task.title}</h4>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={`text-xs ${getStatusColor(task.status)}`}>
-                          {task.status.replace('-', ' ')}
-                        </Badge>
-                        {task.estimated_duration && (
-                          <span className="text-xs text-slate-500">
-                            {task.estimated_duration}min
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => completeTask(task.id)}
-                      className="ml-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priorities</SelectItem>
+                <SelectItem value="urgent">Urgent</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="created_at">Created Date</SelectItem>
+                <SelectItem value="priority">Priority</SelectItem>
+                <SelectItem value="deadline">Deadline</SelectItem>
+                <SelectItem value="title">Title</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Task Lists */}
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3 bg-white/60 backdrop-blur-sm border border-slate-200 rounded-xl">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="active">Active Tasks</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Next Actions */}
+            <Card className="bg-white/80 backdrop-blur-sm border-slate-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-purple-600" />
+                  Next Actions ({tasksByStatus['next-action'].length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {tasksByStatus['next-action'].slice(0, 5).map(task => (
+                    <TaskCard key={task.id} task={task} onViewDetails={handleViewTaskDetails} />
+                  ))}
+                  {tasksByStatus['next-action'].length === 0 && (
+                    <p className="text-slate-500 text-center py-4">No next actions</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Projects */}
+            <Card className="bg-white/80 backdrop-blur-sm border-slate-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5 text-blue-600" />
+                  Projects ({tasksByStatus.project.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {tasksByStatus.project.slice(0, 5).map(task => (
+                    <TaskCard key={task.id} task={task} onViewDetails={handleViewTaskDetails} />
+                  ))}
+                  {tasksByStatus.project.length === 0 && (
+                    <p className="text-slate-500 text-center py-4">No projects</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="active">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredTasks.filter(task => task.status !== 'completed').map(task => (
+              <TaskCard key={task.id} task={task} onViewDetails={handleViewTaskDetails} />
+            ))}
+            {filteredTasks.filter(task => task.status !== 'completed').length === 0 && (
+              <div className="col-span-full text-center py-8 text-slate-500">
+                <Archive className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>No active tasks found</p>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="completed">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {tasksByStatus.completed.map(task => (
+              <TaskCard key={task.id} task={task} onViewDetails={handleViewTaskDetails} />
+            ))}
+            {tasksByStatus.completed.length === 0 && (
+              <div className="col-span-full text-center py-8 text-slate-500">
+                <Archive className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>No completed tasks yet</p>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
