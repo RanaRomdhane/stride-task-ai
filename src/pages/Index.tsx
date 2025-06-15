@@ -17,10 +17,11 @@ import { RoleBasedDashboard } from "@/components/RoleBasedDashboard";
 import { DraggablePomodoroTimer } from "@/components/DraggablePomodoroTimer";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { Logo } from "@/components/Logo";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, Settings, Users, BarChart, Calendar, Kanban, Timer, Plus, LayoutDashboard, Grid, Clock, Layers } from "lucide-react";
+import { LogOut, Settings, Users, BarChart, Calendar, Kanban, Timer, Plus, LayoutDashboard, Grid, Clock, Layers, Bell } from "lucide-react";
 import { useTaskStore } from "@/store/taskStore";
 import { toast } from "@/hooks/use-toast";
 
@@ -69,8 +70,8 @@ const Index = () => {
     await supabase.auth.signOut();
     setShowFloatingTimer(false);
     toast({
-      title: "Signed out",
-      description: "You've been signed out successfully.",
+      title: "Signed out successfully",
+      description: "Thanks for using our platform. See you soon!",
     });
   };
 
@@ -82,8 +83,9 @@ const Index = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
         <div className="text-center animate-fade-in">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading your workspace...</p>
+          <LoadingSpinner size="lg" className="mx-auto mb-4" />
+          <p className="text-slate-600 font-medium">Loading your workspace...</p>
+          <p className="text-slate-500 text-sm mt-2">Setting up your professional task management environment</p>
         </div>
       </div>
     );
@@ -93,6 +95,15 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="w-full max-w-md animate-scale-in">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Logo />
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
+                TaskMaster Pro
+              </h1>
+            </div>
+            <p className="text-slate-600">Professional Task Management Platform</p>
+          </div>
           <AuthForm onAuthSuccess={handleAuthSuccess} />
         </div>
       </div>
@@ -104,15 +115,15 @@ const Index = () => {
   const canAccessAdminFeatures = isAdmin || isSubAdmin;
 
   const tabItems = [
-    { value: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { value: "add-task", label: "Add Task", icon: Plus },
-    { value: "kanban", label: "Kanban", icon: Kanban },
-    { value: "gtd", label: "GTD Matrix", icon: Grid },
-    { value: "batches", label: "Batches", icon: Layers },
-    { value: "calendar", label: "Calendar", icon: Calendar },
-    { value: "analytics", label: "Analytics", icon: BarChart },
-    { value: "google", label: "Google API", icon: Settings },
-    ...(canAccessAdminFeatures ? [{ value: "admin", label: isAdmin ? "Admin" : "Sub-Admin", icon: Users }] : []),
+    { value: "dashboard", label: "Dashboard", icon: LayoutDashboard, color: "text-blue-600" },
+    { value: "add-task", label: "Add Task", icon: Plus, color: "text-green-600" },
+    { value: "kanban", label: "Kanban", icon: Kanban, color: "text-purple-600" },
+    { value: "gtd", label: "GTD Matrix", icon: Grid, color: "text-orange-600" },
+    { value: "batches", label: "Batches", icon: Layers, color: "text-indigo-600" },
+    { value: "calendar", label: "Calendar", icon: Calendar, color: "text-red-600" },
+    { value: "analytics", label: "Analytics", icon: BarChart, color: "text-teal-600" },
+    { value: "google", label: "Integrations", icon: Settings, color: "text-slate-600" },
+    ...(canAccessAdminFeatures ? [{ value: "admin", label: isAdmin ? "Admin Panel" : "Sub-Admin", icon: Users, color: "text-amber-600" }] : []),
   ];
 
   return (
@@ -124,41 +135,45 @@ const Index = () => {
         </div>
       )}
 
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-40 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      {/* Professional Header */}
+      <div className="bg-white/95 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-4 flex-shrink-0">
               <Logo />
               <div>
-                <h1 className="text-lg lg:text-xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
-                  Task Management Platform
+                <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
+                  TaskMaster Pro
                 </h1>
-                <p className="text-xs text-slate-600">
-                  Professional Task Management System
+                <div className="flex items-center gap-3">
+                  <p className="text-sm text-slate-600">
+                    Professional Task Management Platform
+                  </p>
                   {userRole && (
-                    <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full animate-fade-in">
+                    <span className="px-2 py-1 text-xs bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 rounded-full border border-blue-200 font-medium">
                       {userRole.role.replace('_', ' ').toUpperCase()}
                     </span>
                   )}
-                </p>
+                </div>
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {/* Notification Center */}
-              <NotificationCenter />
+              <div className="relative">
+                <NotificationCenter />
+              </div>
               
               {/* Timer Toggle */}
               <Button
                 onClick={() => setShowFloatingTimer(!showFloatingTimer)}
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-2 transition-all duration-200 hover:scale-105"
+                className="flex items-center gap-2 transition-all duration-200 hover:scale-105 hover:bg-blue-50 hover:border-blue-200"
               >
                 <Timer className="h-4 w-4" />
                 <span className="hidden sm:inline">
-                  {showFloatingTimer ? 'Hide Timer' : 'Show Timer'}
+                  {showFloatingTimer ? 'Hide Timer' : 'Pomodoro'}
                 </span>
               </Button>
               
@@ -166,9 +181,9 @@ const Index = () => {
                 onClick={handleSignOut}
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-1 text-xs px-3 transition-all duration-200 hover:scale-105 hover:bg-red-50 hover:border-red-200"
+                className="flex items-center gap-2 text-slate-600 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-all duration-200"
               >
-                <LogOut className="h-3 w-3" />
+                <LogOut className="h-4 w-4" />
                 <span className="hidden sm:inline">Sign Out</span>
               </Button>
             </div>
@@ -178,102 +193,85 @@ const Index = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          {/* Enhanced Tab Navigation */}
+          {/* Professional Tab Navigation */}
           <div className="relative">
-            <TabsList className="grid w-full bg-white/60 backdrop-blur-sm border border-slate-200 rounded-xl p-1 shadow-sm" 
+            <TabsList className="grid w-full bg-white/80 backdrop-blur-md border border-slate-200/50 rounded-2xl p-2 shadow-lg overflow-x-auto" 
                       style={{ gridTemplateColumns: `repeat(${tabItems.length}, minmax(0, 1fr))` }}>
               {tabItems.map((item) => (
                 <TabsTrigger 
                   key={item.value}
                   value={item.value}
-                  className="flex items-center gap-2 rounded-lg transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:scale-105 hover:bg-white/50"
+                  className="flex items-center gap-2 rounded-xl transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:scale-105 hover:bg-white/50 min-w-0"
                 >
-                  <item.icon className="h-4 w-4" />
-                  <span className="hidden lg:inline">{item.label}</span>
+                  <item.icon className={`h-4 w-4 ${item.color || 'text-slate-500'}`} />
+                  <span className="hidden lg:inline text-sm font-medium truncate">{item.label}</span>
                 </TabsTrigger>
               ))}
             </TabsList>
           </div>
 
-          {/* Tab Content with Animations */}
+          {/* Enhanced Tab Content */}
           <div className="animate-fade-in">
             <TabsContent value="dashboard" className="space-y-6 animate-scale-in">
               <RoleBasedDashboard />
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div className="lg:col-span-3 transition-all duration-300 hover:scale-[1.01]">
+                <div className="lg:col-span-3 transition-all duration-300">
                   <TaskDashboard />
                 </div>
-                <div className="lg:col-span-1 transition-all duration-300 hover:scale-[1.01]">
+                <div className="lg:col-span-1 transition-all duration-300">
                   <StickyNotesWidget />
                 </div>
               </div>
             </TabsContent>
 
             <TabsContent value="add-task" className="animate-scale-in">
-              <Card className="p-6 bg-white/80 backdrop-blur-sm border-slate-200 shadow-lg transition-all duration-300 hover:shadow-xl">
+              <Card className="p-6 bg-white/90 backdrop-blur-sm border-slate-200 shadow-lg">
                 <TaskInput />
               </Card>
             </TabsContent>
 
             <TabsContent value="kanban" className="animate-scale-in">
-              <div className="transition-all duration-300 hover:scale-[1.01]">
-                <KanbanBoard />
-              </div>
+              <KanbanBoard />
             </TabsContent>
 
             <TabsContent value="gtd" className="animate-scale-in">
-              <div className="transition-all duration-300 hover:scale-[1.01]">
-                <GTDMatrix />
-              </div>
+              <GTDMatrix />
             </TabsContent>
 
             <TabsContent value="batches" className="animate-scale-in">
-              <div className="transition-all duration-300 hover:scale-[1.01]">
-                <TaskBatches />
-              </div>
+              <TaskBatches />
             </TabsContent>
 
             <TabsContent value="calendar" className="animate-scale-in">
-              <div className="transition-all duration-300 hover:scale-[1.01]">
-                <CalendarView />
-              </div>
+              <CalendarView />
             </TabsContent>
 
             <TabsContent value="analytics" className="animate-scale-in">
-              <div className="transition-all duration-300 hover:scale-[1.01]">
-                <AnalyticsCharts />
-              </div>
+              <AnalyticsCharts />
             </TabsContent>
 
             <TabsContent value="google" className="animate-scale-in">
-              <div className="transition-all duration-300 hover:scale-[1.01]">
-                <GoogleIntegration />
-              </div>
+              <GoogleIntegration />
             </TabsContent>
 
             {canAccessAdminFeatures && (
               <TabsContent value="admin" className="animate-scale-in">
-                <div className="transition-all duration-300 hover:scale-[1.01]">
-                  <AdminPanel />
-                </div>
+                <AdminPanel />
               </TabsContent>
             )}
           </div>
         </Tabs>
       </div>
 
-      {/* Floating Action Button for Quick Actions */}
+      {/* Enhanced Floating Action Button */}
       <div className="fixed bottom-6 right-6 z-30">
-        <div className="flex flex-col gap-3 items-end">
-          {/* Quick Add Task Button */}
-          <Button
-            onClick={() => setActiveTab("add-task")}
-            className="rounded-full w-14 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
-            size="sm"
-          >
-            <Plus className="h-6 w-6" />
-          </Button>
-        </div>
+        <Button
+          onClick={() => setActiveTab("add-task")}
+          className="rounded-full w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 group"
+          size="sm"
+        >
+          <Plus className="h-6 w-6 group-hover:rotate-90 transition-transform duration-300" />
+        </Button>
       </div>
     </div>
   );
