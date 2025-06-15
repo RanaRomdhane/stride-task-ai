@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { User } from "@supabase/supabase-js";
 import { TaskDashboard } from "@/components/TaskDashboard";
 import { TaskInput } from "@/components/TaskInput";
 import { GTDMatrix } from "@/components/GTDMatrix";

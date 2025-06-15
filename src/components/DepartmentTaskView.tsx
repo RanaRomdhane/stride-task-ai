@@ -1,11 +1,11 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle, Clock, AlertCircle, Users } from "lucide-react";
-import { Task } from "@/store/taskStore";
+import { authService } from "@/services/authService";
+import { taskService, Task } from "@/services/taskService";
 
 interface DepartmentTaskViewProps {
   isAdmin: boolean;
@@ -23,40 +23,20 @@ export const DepartmentTaskView = ({ isAdmin, currentUserDepartment }: Departmen
   const fetchDepartmentTasks = async () => {
     try {
       setLoading(true);
+      const currentUser = authService.getCurrentUser();
       
-      let tasksQuery = supabase
-        .from('tasks')
-        .select('*');
-
-      // If sub-admin, filter by department users
-      if (!isAdmin && currentUserDepartment) {
-        // First get users in the department
-        const { data: departmentUsers } = await supabase
-          .from('user_roles')
-          .select('user_id')
-          .eq('department', currentUserDepartment);
-
-        const userIds = departmentUsers?.map(u => u.user_id) || [];
-        if (userIds.length > 0) {
-          tasksQuery = tasksQuery.in('user_id', userIds);
-        }
+      if (!currentUser) {
+        setDepartmentTasks([]);
+        return;
       }
 
-      const { data: tasks, error } = await tasksQuery.order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const formattedTasks = tasks?.map(task => ({
-        ...task,
-        created_at: new Date(task.created_at),
-        updated_at: new Date(task.updated_at),
-        completed_at: task.completed_at ? new Date(task.completed_at) : undefined,
-        deadline: task.deadline ? new Date(task.deadline) : undefined,
-      })) || [];
-
-      setDepartmentTasks(formattedTasks);
+      // For now, just get the current user's tasks
+      // In a full implementation, this would filter by department
+      const tasks = await taskService.getTasks(currentUser.id);
+      setDepartmentTasks(tasks);
     } catch (error) {
       console.error('Error fetching department tasks:', error);
+      setDepartmentTasks([]);
     } finally {
       setLoading(false);
     }
@@ -92,7 +72,7 @@ export const DepartmentTaskView = ({ isAdmin, currentUserDepartment }: Departmen
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            {isAdmin ? "System-wide Task Overview" : `${currentUserDepartment} Department Overview`}
+            {isAdmin ? "System-wide Task Overview" : `${currentUserDepartment || 'Department'} Overview`}
           </CardTitle>
           <CardDescription>
             Task performance and statistics
@@ -151,7 +131,7 @@ export const DepartmentTaskView = ({ isAdmin, currentUserDepartment }: Departmen
                   <div>
                     <p className="font-medium">{task.title}</p>
                     <p className="text-sm text-gray-500">
-                      {task.category} • {task.estimated_duration} min
+                      {task.estimated_duration} min
                     </p>
                   </div>
                 </div>
