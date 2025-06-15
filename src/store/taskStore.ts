@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -83,6 +82,102 @@ export interface StickyNote {
   updated_at: Date;
 }
 
+export interface Comment {
+  id: string;
+  user_id: string;
+  task_id?: string;
+  project_id?: string;
+  parent_id?: string;
+  content: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: 'task_update' | 'deadline_reminder' | 'comment' | 'assignment' | 'mention';
+  title: string;
+  message: string;
+  entity_id?: string;
+  entity_type?: 'task' | 'project' | 'comment';
+  read: boolean;
+  created_at: Date;
+}
+
+export interface NotificationSettings {
+  id: string;
+  user_id: string;
+  email_notifications: boolean;
+  in_app_notifications: boolean;
+  task_updates: boolean;
+  deadline_reminders: boolean;
+  comments: boolean;
+  assignments: boolean;
+  mentions: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface TaskAssignment {
+  id: string;
+  task_id: string;
+  user_id: string;
+  assigned_by: string;
+  role: 'owner' | 'assignee' | 'collaborator';
+  created_at: Date;
+}
+
+export interface GroupMessage {
+  id: string;
+  group_id: string;
+  sender_id: string;
+  content: string;
+  file_url?: string;
+  file_name?: string;
+  created_at: Date;
+}
+
+export interface MessageGroup {
+  id: string;
+  name: string;
+  description?: string;
+  created_by: string;
+  project_id?: string;
+  created_at: Date;
+}
+
+export interface GroupMember {
+  id: string;
+  group_id: string;
+  user_id: string;
+  role: 'admin' | 'member';
+  joined_at: Date;
+}
+
+export interface Meeting {
+  id: string;
+  title: string;
+  description?: string;
+  start_time: Date;
+  end_time: Date;
+  location?: string;
+  meeting_url?: string;
+  created_by: string;
+  project_id?: string;
+  task_id?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface MeetingAttendee {
+  id: string;
+  meeting_id: string;
+  user_id: string;
+  status: 'invited' | 'accepted' | 'declined' | 'tentative';
+  created_at: Date;
+}
+
 interface TaskStore {
   tasks: Task[];
   batches: TaskBatch[];
@@ -91,6 +186,15 @@ interface TaskStore {
   userRole?: UserRole;
   projects: Project[];
   stickyNotes: StickyNote[];
+  comments: Comment[];
+  notifications: Notification[];
+  notificationSettings?: NotificationSettings;
+  taskAssignments: TaskAssignment[];
+  groupMessages: GroupMessage[];
+  messageGroups: MessageGroup[];
+  groupMembers: GroupMember[];
+  meetings: Meeting[];
+  meetingAttendees: MeetingAttendee[];
   loading: boolean;
   
   // Task actions
@@ -123,6 +227,40 @@ interface TaskStore {
   completePomodoro: () => Promise<void>;
   pausePomodoro: () => void;
   
+  // Comment actions
+  fetchComments: (taskId?: string, projectId?: string) => Promise<void>;
+  createComment: (comment: Omit<Comment, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => Promise<void>;
+  updateComment: (id: string, content: string) => Promise<void>;
+  deleteComment: (id: string) => Promise<void>;
+  
+  // Notification actions
+  fetchNotifications: () => Promise<void>;
+  markNotificationAsRead: (id: string) => Promise<void>;
+  markAllNotificationsAsRead: () => Promise<void>;
+  
+  // Notification settings actions
+  fetchNotificationSettings: () => Promise<void>;
+  updateNotificationSettings: (settings: Partial<NotificationSettings>) => Promise<void>;
+  
+  // Task assignment actions
+  fetchTaskAssignments: (taskId?: string) => Promise<void>;
+  assignUserToTask: (taskId: string, userId: string, role: TaskAssignment['role']) => Promise<void>;
+  removeUserFromTask: (taskId: string, userId: string) => Promise<void>;
+  
+  // Group messaging actions
+  fetchMessageGroups: () => Promise<void>;
+  createMessageGroup: (group: Omit<MessageGroup, 'id' | 'created_at' | 'created_by'>) => Promise<void>;
+  fetchGroupMessages: (groupId: string) => Promise<void>;
+  sendGroupMessage: (groupId: string, content: string, fileUrl?: string, fileName?: string) => Promise<void>;
+  
+  // Meeting actions
+  fetchMeetings: () => Promise<void>;
+  createMeeting: (meeting: Omit<Meeting, 'id' | 'created_at' | 'updated_at' | 'created_by'>) => Promise<void>;
+  updateMeeting: (id: string, updates: Partial<Meeting>) => Promise<void>;
+  deleteMeeting: (id: string) => Promise<void>;
+  inviteToMeeting: (meetingId: string, userId: string) => Promise<void>;
+  respondToMeetingInvite: (meetingId: string, status: MeetingAttendee['status']) => Promise<void>;
+  
   // AI-powered actions
   batchSimilarTasks: () => Promise<void>;
   suggestDependencies: (taskId: string) => string[];
@@ -135,8 +273,17 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
   pomodoroSessions: [],
   projects: [],
   stickyNotes: [],
+  comments: [],
+  notifications: [],
+  taskAssignments: [],
+  groupMessages: [],
+  messageGroups: [],
+  groupMembers: [],
+  meetings: [],
+  meetingAttendees: [],
   loading: false,
   
+  // Task actions
   fetchTasks: async () => {
     try {
       set({ loading: true });
@@ -287,6 +434,7 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
     });
   },
 
+  // Batch actions
   fetchBatches: async () => {
     try {
       const { data, error } = await supabase
@@ -409,6 +557,7 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
     }
   },
 
+  // Role and project actions
   fetchUserRole: async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -495,6 +644,7 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
     }
   },
 
+  // Sticky notes actions
   fetchStickyNotes: async () => {
     try {
       const { data, error } = await supabase
@@ -589,6 +739,7 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
     }
   },
 
+  // Pomodoro actions
   startPomodoro: (taskId, duration = 25) => {
     const session: PomodoroSession = {
       id: crypto.randomUUID(),
@@ -649,6 +800,678 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
     set({ currentPomodoro: undefined });
   },
 
+  // Comment actions
+  fetchComments: async (taskId, projectId) => {
+    try {
+      let query = supabase.from('comments').select('*').order('created_at', { ascending: true });
+      
+      if (taskId) {
+        query = query.eq('task_id', taskId);
+      } else if (projectId) {
+        query = query.eq('project_id', projectId);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      const comments = data?.map(comment => ({
+        ...comment,
+        created_at: new Date(comment.created_at),
+        updated_at: new Date(comment.updated_at),
+      })) || [];
+      
+      set({ comments });
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch comments",
+        variant: "destructive",
+      });
+    }
+  },
+
+  createComment: async (commentData) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('comments')
+        .insert([{
+          ...commentData,
+          user_id: user.id,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newComment: Comment = {
+        ...data,
+        created_at: new Date(data.created_at),
+        updated_at: new Date(data.updated_at),
+      };
+
+      set((state) => ({
+        comments: [...state.comments, newComment],
+      }));
+
+      toast({
+        title: "Success",
+        description: "Comment added successfully",
+      });
+    } catch (error) {
+      console.error('Error creating comment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create comment",
+        variant: "destructive",
+      });
+    }
+  },
+
+  updateComment: async (id, content) => {
+    try {
+      const { error } = await supabase
+        .from('comments')
+        .update({ content })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      set((state) => ({
+        comments: state.comments.map((comment) =>
+          comment.id === id ? { ...comment, content, updated_at: new Date() } : comment
+        ),
+      }));
+
+      toast({
+        title: "Success",
+        description: "Comment updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update comment",
+        variant: "destructive",
+      });
+    }
+  },
+
+  deleteComment: async (id) => {
+    try {
+      const { error } = await supabase
+        .from('comments')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      set((state) => ({
+        comments: state.comments.filter((comment) => comment.id !== id),
+      }));
+
+      toast({
+        title: "Success",
+        description: "Comment deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete comment",
+        variant: "destructive",
+      });
+    }
+  },
+
+  // Notification actions
+  fetchNotifications: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const notifications = data?.map(notification => ({
+        ...notification,
+        created_at: new Date(notification.created_at),
+      })) || [];
+
+      set({ notifications });
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  },
+
+  markNotificationAsRead: async (id) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      set((state) => ({
+        notifications: state.notifications.map((notification) =>
+          notification.id === id ? { ...notification, read: true } : notification
+        ),
+      }));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  },
+
+  markAllNotificationsAsRead: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', user.id)
+        .eq('read', false);
+
+      if (error) throw error;
+
+      set((state) => ({
+        notifications: state.notifications.map((notification) => ({
+          ...notification,
+          read: true,
+        })),
+      }));
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  },
+
+  // Notification settings actions
+  fetchNotificationSettings: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('notification_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      if (data) {
+        set({
+          notificationSettings: {
+            ...data,
+            created_at: new Date(data.created_at),
+            updated_at: new Date(data.updated_at),
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching notification settings:', error);
+    }
+  },
+
+  updateNotificationSettings: async (settings) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('notification_settings')
+        .upsert({
+          user_id: user.id,
+          ...settings,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      set({
+        notificationSettings: {
+          ...data,
+          created_at: new Date(data.created_at),
+          updated_at: new Date(data.updated_at),
+        }
+      });
+
+      toast({
+        title: "Success",
+        description: "Notification settings updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating notification settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update notification settings",
+        variant: "destructive",
+      });
+    }
+  },
+
+  // Task assignment actions
+  fetchTaskAssignments: async (taskId) => {
+    try {
+      let query = supabase.from('task_assignments').select('*');
+      
+      if (taskId) {
+        query = query.eq('task_id', taskId);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      const assignments = data?.map(assignment => ({
+        ...assignment,
+        created_at: new Date(assignment.created_at),
+      })) || [];
+      
+      set({ taskAssignments: assignments });
+    } catch (error) {
+      console.error('Error fetching task assignments:', error);
+    }
+  },
+
+  assignUserToTask: async (taskId, userId, role) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('task_assignments')
+        .insert([{
+          task_id: taskId,
+          user_id: userId,
+          assigned_by: user.id,
+          role,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newAssignment: TaskAssignment = {
+        ...data,
+        created_at: new Date(data.created_at),
+      };
+
+      set((state) => ({
+        taskAssignments: [...state.taskAssignments, newAssignment],
+      }));
+
+      toast({
+        title: "Success",
+        description: "User assigned to task successfully",
+      });
+    } catch (error) {
+      console.error('Error assigning user to task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to assign user to task",
+        variant: "destructive",
+      });
+    }
+  },
+
+  removeUserFromTask: async (taskId, userId) => {
+    try {
+      const { error } = await supabase
+        .from('task_assignments')
+        .delete()
+        .eq('task_id', taskId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      set((state) => ({
+        taskAssignments: state.taskAssignments.filter(
+          (assignment) => !(assignment.task_id === taskId && assignment.user_id === userId)
+        ),
+      }));
+
+      toast({
+        title: "Success",
+        description: "User removed from task successfully",
+      });
+    } catch (error) {
+      console.error('Error removing user from task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove user from task",
+        variant: "destructive",
+      });
+    }
+  },
+
+  // Group messaging actions
+  fetchMessageGroups: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('message_groups')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const groups = data?.map(group => ({
+        ...group,
+        created_at: new Date(group.created_at),
+      })) || [];
+
+      set({ messageGroups: groups });
+    } catch (error) {
+      console.error('Error fetching message groups:', error);
+    }
+  },
+
+  createMessageGroup: async (groupData) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('message_groups')
+        .insert([{
+          ...groupData,
+          created_by: user.id,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newGroup: MessageGroup = {
+        ...data,
+        created_at: new Date(data.created_at),
+      };
+
+      set((state) => ({
+        messageGroups: [newGroup, ...state.messageGroups],
+      }));
+
+      toast({
+        title: "Success",
+        description: "Message group created successfully",
+      });
+    } catch (error) {
+      console.error('Error creating message group:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create message group",
+        variant: "destructive",
+      });
+    }
+  },
+
+  fetchGroupMessages: async (groupId) => {
+    try {
+      const { data, error } = await supabase
+        .from('group_messages')
+        .select('*')
+        .eq('group_id', groupId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      const messages = data?.map(message => ({
+        ...message,
+        created_at: new Date(message.created_at),
+      })) || [];
+
+      set({ groupMessages: messages });
+    } catch (error) {
+      console.error('Error fetching group messages:', error);
+    }
+  },
+
+  sendGroupMessage: async (groupId, content, fileUrl, fileName) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('group_messages')
+        .insert([{
+          group_id: groupId,
+          sender_id: user.id,
+          content,
+          file_url: fileUrl,
+          file_name: fileName,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newMessage: GroupMessage = {
+        ...data,
+        created_at: new Date(data.created_at),
+      };
+
+      set((state) => ({
+        groupMessages: [...state.groupMessages, newMessage],
+      }));
+    } catch (error) {
+      console.error('Error sending group message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    }
+  },
+
+  // Meeting actions
+  fetchMeetings: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('meetings')
+        .select('*')
+        .order('start_time', { ascending: true });
+
+      if (error) throw error;
+
+      const meetings = data?.map(meeting => ({
+        ...meeting,
+        start_time: new Date(meeting.start_time),
+        end_time: new Date(meeting.end_time),
+        created_at: new Date(meeting.created_at),
+        updated_at: new Date(meeting.updated_at),
+      })) || [];
+
+      set({ meetings });
+    } catch (error) {
+      console.error('Error fetching meetings:', error);
+    }
+  },
+
+  createMeeting: async (meetingData) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('meetings')
+        .insert([{
+          ...meetingData,
+          created_by: user.id,
+          start_time: meetingData.start_time.toISOString(),
+          end_time: meetingData.end_time.toISOString(),
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newMeeting: Meeting = {
+        ...data,
+        start_time: new Date(data.start_time),
+        end_time: new Date(data.end_time),
+        created_at: new Date(data.created_at),
+        updated_at: new Date(data.updated_at),
+      };
+
+      set((state) => ({
+        meetings: [...state.meetings, newMeeting],
+      }));
+
+      toast({
+        title: "Success",
+        description: "Meeting created successfully",
+      });
+    } catch (error) {
+      console.error('Error creating meeting:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create meeting",
+        variant: "destructive",
+      });
+    }
+  },
+
+  updateMeeting: async (id, updates) => {
+    try {
+      const dbUpdates = {
+        ...updates,
+        start_time: updates.start_time?.toISOString(),
+        end_time: updates.end_time?.toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('meetings')
+        .update(dbUpdates)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      set((state) => ({
+        meetings: state.meetings.map((meeting) =>
+          meeting.id === id ? { ...meeting, ...updates, updated_at: new Date() } : meeting
+        ),
+      }));
+
+      toast({
+        title: "Success",
+        description: "Meeting updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating meeting:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update meeting",
+        variant: "destructive",
+      });
+    }
+  },
+
+  deleteMeeting: async (id) => {
+    try {
+      const { error } = await supabase
+        .from('meetings')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      set((state) => ({
+        meetings: state.meetings.filter((meeting) => meeting.id !== id),
+      }));
+
+      toast({
+        title: "Success",
+        description: "Meeting deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting meeting:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete meeting",
+        variant: "destructive",
+      });
+    }
+  },
+
+  inviteToMeeting: async (meetingId, userId) => {
+    try {
+      const { data, error } = await supabase
+        .from('meeting_attendees')
+        .insert([{
+          meeting_id: meetingId,
+          user_id: userId,
+          status: 'invited',
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newAttendee: MeetingAttendee = {
+        ...data,
+        created_at: new Date(data.created_at),
+      };
+
+      set((state) => ({
+        meetingAttendees: [...state.meetingAttendees, newAttendee],
+      }));
+
+      toast({
+        title: "Success",
+        description: "Meeting invitation sent successfully",
+      });
+    } catch (error) {
+      console.error('Error inviting to meeting:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send meeting invitation",
+        variant: "destructive",
+      });
+    }
+  },
+
+  respondToMeetingInvite: async (meetingId, status) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('meeting_attendees')
+        .update({ status })
+        .eq('meeting_id', meetingId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      set((state) => ({
+        meetingAttendees: state.meetings.map((attendee) =>
+          attendee.meeting_id === meetingId && attendee.user_id === user.id
+            ? { ...attendee, status }
+            : attendee
+        ),
+      }));
+
+      toast({
+        title: "Success",
+        description: "Meeting invitation response updated",
+      });
+    } catch (error) {
+      console.error('Error responding to meeting invite:', error);
+      toast({
+        title: "Error",
+        description: "Failed to respond to meeting invitation",
+        variant: "destructive",
+      });
+    }
+  },
+
+  // AI-powered actions
   batchSimilarTasks: async () => {
     const { tasks } = get();
     const unbatchedTasks = tasks.filter((task) => !task.batch_id && task.status !== 'completed');

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -14,6 +15,7 @@ import { AnalyticsCharts } from "@/components/AnalyticsCharts";
 import { GoogleIntegration } from "@/components/GoogleIntegration";
 import { RoleBasedDashboard } from "@/components/RoleBasedDashboard";
 import { DraggablePomodoroTimer } from "@/components/DraggablePomodoroTimer";
+import { NotificationCenter } from "@/components/NotificationCenter";
 import { Logo } from "@/components/Logo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
@@ -130,10 +132,10 @@ const Index = () => {
               <Logo />
               <div>
                 <h1 className="text-lg lg:text-xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
-                  TaskMaster AI
+                  Task Management Platform
                 </h1>
                 <p className="text-xs text-slate-600">
-                  AI-Powered Task Management
+                  Professional Task Management System
                   {userRole && (
                     <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full animate-fade-in">
                       {userRole.role.replace('_', ' ').toUpperCase()}
@@ -144,6 +146,9 @@ const Index = () => {
             </div>
             
             <div className="flex items-center gap-2">
+              {/* Notification Center */}
+              <NotificationCenter />
+              
               {/* Timer Toggle */}
               <Button
                 onClick={() => setShowFloatingTimer(!showFloatingTimer)}
