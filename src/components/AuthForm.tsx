@@ -1,17 +1,16 @@
 
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { authService, User } from "@/services/authService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Mail, Lock, User, ArrowRight, Shield, CheckCircle } from "lucide-react";
+import { Mail, Lock, User as UserIcon, ArrowRight, Shield, CheckCircle } from "lucide-react";
 
 interface AuthFormProps {
-  onAuthSuccess: () => void;
+  onAuthSuccess: (user: User) => void;
 }
 
 export const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
@@ -19,7 +18,6 @@ export const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState("");
   const [activeTab, setActiveTab] = useState("signin");
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -27,30 +25,28 @@ export const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: fullName,
-            role: role,
-          },
-        },
-      });
+      const { user, error } = await authService.signUp(email, password, fullName);
 
-      if (error) throw error;
+      if (error) {
+        toast({
+          title: "Registration Failed",
+          description: error,
+          variant: "destructive",
+        });
+        return;
+      }
 
-      toast({
-        title: "Account Created Successfully",
-        description: "Your account has been created. Please check your email to verify your account.",
-      });
-      
-      setActiveTab("signin");
+      if (user) {
+        onAuthSuccess(user);
+        toast({
+          title: "Account Created Successfully",
+          description: "Welcome to TaskMaster Pro!",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Registration Failed",
-        description: error.message,
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -63,22 +59,28 @@ export const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { user, error } = await authService.signIn(email, password);
 
-      if (error) throw error;
+      if (error) {
+        toast({
+          title: "Authentication Failed",
+          description: error,
+          variant: "destructive",
+        });
+        return;
+      }
 
-      onAuthSuccess();
-      toast({
-        title: "Authentication Successful",
-        description: "You have been successfully signed in to your account.",
-      });
+      if (user) {
+        onAuthSuccess(user);
+        toast({
+          title: "Authentication Successful",
+          description: "Welcome back to TaskMaster Pro!",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Authentication Failed",
-        description: error.message,
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -184,7 +186,7 @@ export const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
                 <div className="space-y-2">
                   <Label htmlFor="signup-name" className="text-slate-700 font-medium">Full Name</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                    <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
                     <Input
                       id="signup-name"
                       type="text"
@@ -226,43 +228,6 @@ export const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role-select" className="text-slate-700 font-medium">Role</Label>
-                  <Select value={role} onValueChange={setRole} required>
-                    <SelectTrigger className="h-12 bg-white border-slate-300 focus:border-slate-500 focus:ring-2 focus:ring-slate-500/20 rounded-lg">
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-slate-200 rounded-lg shadow-xl">
-                      <SelectItem value="admin" className="rounded-md hover:bg-slate-50 p-3">
-                        <div className="flex items-center gap-3">
-                          <CheckCircle className="w-4 h-4 text-slate-600" />
-                          <div>
-                            <div className="font-medium">Administrator</div>
-                            <div className="text-sm text-slate-500">Full system access</div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="sub_admin" className="rounded-md hover:bg-slate-50 p-3">
-                        <div className="flex items-center gap-3">
-                          <CheckCircle className="w-4 h-4 text-slate-600" />
-                          <div>
-                            <div className="font-medium">Manager</div>
-                            <div className="text-sm text-slate-500">Department management</div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="employee" className="rounded-md hover:bg-slate-50 p-3">
-                        <div className="flex items-center gap-3">
-                          <CheckCircle className="w-4 h-4 text-slate-600" />
-                          <div>
-                            <div className="font-medium">Employee</div>
-                            <div className="text-sm text-slate-500">Standard access</div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 <Button 
                   type="submit" 
                   className="w-full h-12 bg-gradient-to-r from-slate-700 to-slate-900 hover:from-slate-800 hover:to-slate-950 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200" 
@@ -283,6 +248,15 @@ export const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
               </form>
             </TabsContent>
           </Tabs>
+
+          {/* Quick Login Hint */}
+          <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <p className="text-xs text-slate-600 font-medium mb-2">Quick Login for Testing:</p>
+            <p className="text-xs text-slate-500">
+              Email: admin@taskmaster.com<br/>
+              Password: admin123
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

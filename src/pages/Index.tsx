@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { TaskDashboard } from "@/components/TaskDashboard";
 import { TaskInput } from "@/components/TaskInput";
@@ -22,52 +21,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LogOut, Settings, Users, BarChart, Calendar, Kanban, Timer, Plus, LayoutDashboard, Grid, Clock, Layers, Bell } from "lucide-react";
-import { useTaskStore } from "@/store/taskStore";
+import { authService, User as MySQLUser } from "@/services/authService";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<MySQLUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [showFloatingTimer, setShowFloatingTimer] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
-  const { fetchTasks, fetchBatches, fetchUserRole, fetchProjects, fetchStickyNotes, userRole } = useTaskStore();
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          // Fetch data when user logs in
-          setTimeout(() => {
-            fetchTasks();
-            fetchBatches();
-            fetchUserRole();
-            fetchProjects();
-            fetchStickyNotes();
-          }, 0);
-        }
-      }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchTasks();
-        fetchBatches();
-        fetchUserRole();
-        fetchProjects();
-        fetchStickyNotes();
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [fetchTasks, fetchBatches, fetchUserRole, fetchProjects, fetchStickyNotes]);
+    // Check for existing user session
+    const currentUser = authService.getCurrentUser();
+    setUser(currentUser);
+    setLoading(false);
+  }, []);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await authService.signOut();
+    setUser(null);
     setShowFloatingTimer(false);
     toast({
       title: "Signed out successfully",
@@ -75,8 +47,8 @@ const Index = () => {
     });
   };
 
-  const handleAuthSuccess = () => {
-    // Auth state change will handle the rest
+  const handleAuthSuccess = (authenticatedUser: MySQLUser) => {
+    setUser(authenticatedUser);
   };
 
   if (loading) {
@@ -110,8 +82,9 @@ const Index = () => {
     );
   }
 
-  const isAdmin = userRole?.role === 'admin';
-  const isSubAdmin = userRole?.role === 'sub_admin';
+  // For now, assume all users are employees since role management will be added later
+  const isAdmin = false;
+  const isSubAdmin = false;
   const canAccessAdminFeatures = isAdmin || isSubAdmin;
 
   const tabItems = [
@@ -149,21 +122,14 @@ const Index = () => {
                   <p className="text-sm text-slate-600">
                     Professional Task Management Platform
                   </p>
-                  {userRole && (
-                    <span className="px-2 py-1 text-xs bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 rounded-full border border-blue-200 font-medium">
-                      {userRole.role.replace('_', ' ').toUpperCase()}
-                    </span>
-                  )}
+                  <span className="px-2 py-1 text-xs bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 rounded-full border border-blue-200 font-medium">
+                    EMPLOYEE
+                  </span>
                 </div>
               </div>
             </div>
             
             <div className="flex items-center gap-3">
-              {/* Notification Center */}
-              <div className="relative">
-                <NotificationCenter />
-              </div>
-              
               {/* Timer Toggle */}
               <Button
                 onClick={() => setShowFloatingTimer(!showFloatingTimer)}
@@ -213,7 +179,6 @@ const Index = () => {
           {/* Enhanced Tab Content */}
           <div className="animate-fade-in">
             <TabsContent value="dashboard" className="space-y-6 animate-scale-in">
-              <RoleBasedDashboard />
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div className="lg:col-span-3 transition-all duration-300">
                   <TaskDashboard />
