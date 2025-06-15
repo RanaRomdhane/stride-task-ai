@@ -24,11 +24,14 @@ class MockDbService {
     if (sqlLower.startsWith('select')) {
       return this.handleSelect(sql, params);
     } else if (sqlLower.startsWith('insert')) {
-      return this.handleInsert(sql, params);
+      const result = this.handleInsert(sql, params);
+      return []; // INSERT queries return empty array
     } else if (sqlLower.startsWith('update')) {
-      return this.handleUpdate(sql, params);
+      const result = this.handleUpdate(sql, params);
+      return []; // UPDATE queries return empty array
     } else if (sqlLower.startsWith('delete')) {
-      return this.handleDelete(sql, params);
+      const result = this.handleDelete(sql, params);
+      return []; // DELETE queries return empty array
     }
     
     return [];
