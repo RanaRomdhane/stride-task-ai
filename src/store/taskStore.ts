@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -939,6 +940,8 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
 
       const notifications = data?.map(notification => ({
         ...notification,
+        type: notification.type as Notification['type'],
+        entity_type: notification.entity_type as Notification['entity_type'],
         created_at: new Date(notification.created_at),
       })) || [];
 
@@ -1024,12 +1027,17 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Convert dates to ISO strings for database
+      const dbSettings = {
+        user_id: user.id,
+        ...settings,
+        created_at: settings.created_at?.toISOString(),
+        updated_at: settings.updated_at?.toISOString(),
+      };
+
       const { data, error } = await supabase
         .from('notification_settings')
-        .upsert({
-          user_id: user.id,
-          ...settings,
-        })
+        .upsert(dbSettings)
         .select()
         .single();
 
@@ -1071,6 +1079,7 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
       
       const assignments = data?.map(assignment => ({
         ...assignment,
+        role: assignment.role as TaskAssignment['role'],
         created_at: new Date(assignment.created_at),
       })) || [];
       
@@ -1100,6 +1109,7 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
 
       const newAssignment: TaskAssignment = {
         ...data,
+        role: data.role as TaskAssignment['role'],
         created_at: new Date(data.created_at),
       };
 
@@ -1343,6 +1353,8 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
         ...updates,
         start_time: updates.start_time?.toISOString(),
         end_time: updates.end_time?.toISOString(),
+        created_at: updates.created_at?.toISOString(),
+        updated_at: updates.updated_at?.toISOString(),
       };
 
       const { error } = await supabase
@@ -1415,6 +1427,7 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
 
       const newAttendee: MeetingAttendee = {
         ...data,
+        status: data.status as MeetingAttendee['status'],
         created_at: new Date(data.created_at),
       };
 
@@ -1450,7 +1463,7 @@ export const useTaskStore = create<TaskStore>()((set, get) => ({
       if (error) throw error;
 
       set((state) => ({
-        meetingAttendees: state.meetings.map((attendee) =>
+        meetingAttendees: state.meetingAttendees.map((attendee) =>
           attendee.meeting_id === meetingId && attendee.user_id === user.id
             ? { ...attendee, status }
             : attendee
